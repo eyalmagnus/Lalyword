@@ -141,9 +141,11 @@ final wordsListProvider = FutureProvider<List<WordItem>>((ref) async {
     return rawWords.map((e) {
        final english = e['english'] ?? '';
        final hebrew = e['hebrew']; // Nullable
+       final syllables = e['syllables']; // Nullable
        return WordItem(
           englishWord: english,
           hebrewWord: hebrew, 
+          syllables: syllables,
        );
     }).toList();
   }

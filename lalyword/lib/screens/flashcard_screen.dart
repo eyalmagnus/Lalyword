@@ -98,11 +98,15 @@ class FlashcardContent extends ConsumerStatefulWidget {
 class _FlashcardContentState extends ConsumerState<FlashcardContent> {
   bool _isFlipped = false;
   bool _enriching = false;
+  // Local toggle state. Initialized from global settings.
+  late bool _showSyllablesLocal;
   final AudioPlayer _audioPlayer = AudioPlayer();
 
   @override
   void initState() {
     super.initState();
+    // Initialize local state from global settings
+    _showSyllablesLocal = ref.read(settingsProvider).showSyllables;
     _checkEnrichment();
   }
 
@@ -113,6 +117,8 @@ class _FlashcardContentState extends ConsumerState<FlashcardContent> {
       setState(() {
         _isFlipped = false;
         _enriching = false;
+        // Reset local state when word changes
+        _showSyllablesLocal = ref.read(settingsProvider).showSyllables;
       });
       _checkEnrichment();
     }
@@ -236,26 +242,50 @@ class _FlashcardContentState extends ConsumerState<FlashcardContent> {
                       // This implies the main "English Word" display should be the syllabified version.
                       
                       Builder(builder: (context) {
-                         final settings = ref.watch(settingsProvider);
-                         final showSyllables = settings.showSyllables;
+                         // Use local state
                          final hasSyllables = widget.word.syllables != null;
                          
-                         final displayText = (showSyllables && hasSyllables) 
+                         var displayText = (_showSyllablesLocal && hasSyllables) 
                              ? widget.word.syllables! 
                              : widget.word.englishWord;
 
+                         // Single syllable check: if we are showing syllables, and there are no dots inside, add one at end.
+                         if (_showSyllablesLocal && hasSyllables && !displayText.contains('.')) {
+                           displayText = '$displayText.';
+                         }
+
                          return Column(
                            children: [
-                             Text(
-                               displayText,
-                               style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                                 fontWeight: FontWeight.bold,
-                               ),
-                               textAlign: TextAlign.center,
+                             Row(
+                               mainAxisAlignment: MainAxisAlignment.center,
+                               children: [
+                                  // Invisible spacer to balance the icon if we want it strictly centered
+                                  // Or just place icon to the right/top-right
+                                  Flexible(
+                                    child: Text(
+                                      displayText,
+                                      style: Theme.of(context).textTheme.displayMedium?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ),
+                                  if (hasSyllables) 
+                                    IconButton(
+                                      icon: Icon(
+                                        _showSyllablesLocal ? Icons.visibility_off : Icons.visibility,
+                                        size: 20,
+                                        color: Colors.grey,
+                                      ),
+                                      onPressed: () {
+                                        setState(() {
+                                          _showSyllablesLocal = !_showSyllablesLocal;
+                                        });
+                                      },
+                                      tooltip: _showSyllablesLocal ? 'Hide Syllables' : 'Show Syllables',
+                                    ),
+                               ],
                              ),
-                             // If we show syllables as main, maybe show original below? Or nothing?
-                             // User requirement is simple: "words show a dot". 
-                             // So we just replace the main text.
                            ],
                          );
                       }),
