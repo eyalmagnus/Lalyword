@@ -230,24 +230,39 @@ class _FlashcardContentState extends ConsumerState<FlashcardContent> {
                       ),
                   ] else ...[
                       // ENGLISH SIDE
-                      Text(
-                        widget.word.englishWord,
-                        style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
+                      // ENGLISH SIDE
+                      // If Syllables enabled AND available, show syllables as MAIN text or sub text?
+                      // User said: "when enabled, all the English words show a dot between silables"
+                      // This implies the main "English Word" display should be the syllabified version.
+                      
+                      Builder(builder: (context) {
+                         final settings = ref.watch(settingsProvider);
+                         final showSyllables = settings.showSyllables;
+                         final hasSyllables = widget.word.syllables != null;
+                         
+                         final displayText = (showSyllables && hasSyllables) 
+                             ? widget.word.syllables! 
+                             : widget.word.englishWord;
+
+                         return Column(
+                           children: [
+                             Text(
+                               displayText,
+                               style: Theme.of(context).textTheme.displayMedium?.copyWith(
+                                 fontWeight: FontWeight.bold,
+                               ),
+                               textAlign: TextAlign.center,
+                             ),
+                             // If we show syllables as main, maybe show original below? Or nothing?
+                             // User requirement is simple: "words show a dot". 
+                             // So we just replace the main text.
+                           ],
+                         );
+                      }),
+                      
                       const SizedBox(height: 16),
-                      // Syllables
-                      if (widget.word.syllables != null)
-                        Text(
-                          widget.word.syllables!, 
-                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                            color: Theme.of(context).colorScheme.primary,
-                            letterSpacing: 1.5,
-                          ),
-                        )
-                      else if (_enriching)
+
+                      if (_enriching)
                         const SizedBox(
                           width: 20, height: 20, 
                           child: CircularProgressIndicator(strokeWidth: 2)

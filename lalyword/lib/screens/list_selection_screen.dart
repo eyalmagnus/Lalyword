@@ -15,13 +15,54 @@ class ListSelectionScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Select a List'),
         actions: [
-          IconButton(
+          PopupMenuButton<int>(
             icon: const Icon(Icons.settings),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const SettingsScreen()),
-              );
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 1,
+                child: Row(
+                  children: [
+                    Icon(Icons.build, color: Colors.grey),
+                    SizedBox(width: 8),
+                    Text('Setup'),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 2,
+                child: StatefulBuilder(
+                  builder: (context, setState) {
+                     // We use a consumer to read the value, but inside a menu it's tricky to rebuild.
+                     // Better to just show the checkbox.
+                     final settings = ref.watch(settingsProvider);
+                     return Row(
+                       children: [
+                         Icon(
+                           settings.showSyllables ? Icons.check_box : Icons.check_box_outline_blank,
+                           color: Colors.grey,
+                         ),
+                         const SizedBox(width: 8),
+                         const Text('Show Syllables'),
+                       ],
+                     );
+                  },
+                ),
+              ),
+            ],
+            onSelected: (value) async {
+              if (value == 1) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const SettingsScreen()),
+                );
+              } else if (value == 2) {
+                 final current = ref.read(settingsProvider).showSyllables;
+                 await ref.read(settingsProvider.notifier).toggleSyllables(!current);
+                 // Force menu rebuild if needed or just snackbar
+                 ScaffoldMessenger.of(context).showSnackBar(
+                   SnackBar(content: Text(!current ? 'Syllables Enabled' : 'Syllables Disabled')),
+                 );
+              }
             },
           ),
         ],

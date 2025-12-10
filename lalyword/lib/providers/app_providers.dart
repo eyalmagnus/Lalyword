@@ -16,18 +16,21 @@ class SettingsState {
   final String sheetId;
   final String wordnikApiKey;
   final bool isConfigured;
+  final bool showSyllables;
 
   SettingsState({
     this.credentialsJson = '',
     this.sheetId = '',
     this.wordnikApiKey = '',
     this.isConfigured = false,
+    this.showSyllables = false,
   });
 
   SettingsState copyWith({
     String? credentialsJson,
     String? sheetId,
     String? wordnikApiKey,
+    bool? showSyllables,
   }) {
     return SettingsState(
       credentialsJson: credentialsJson ?? this.credentialsJson,
@@ -35,6 +38,7 @@ class SettingsState {
       wordnikApiKey: wordnikApiKey ?? this.wordnikApiKey,
       isConfigured: (credentialsJson ?? this.credentialsJson).isNotEmpty && 
                     (sheetId ?? this.sheetId).isNotEmpty,
+      showSyllables: showSyllables ?? this.showSyllables,
     );
   }
 }
@@ -48,15 +52,14 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
     final prefs = await SharedPreferences.getInstance();
     final creds = prefs.getString(AppConstants.sheetCredentialsKey) ?? '';
     final sid = prefs.getString(AppConstants.sheetIdKey) ?? '';
-    final apiKey = prefs.getString('wordnik_api_key') ?? ''; // We need to key for this
-    
-    // If empty, try to use compile-time constants if defined
-    // but usually user input is preferred here
+    final apiKey = prefs.getString('wordnik_api_key') ?? '';
+    final showSyllables = prefs.getBool('show_syllables') ?? false;
     
     state = SettingsState(
       credentialsJson: creds,
       sheetId: sid,
       wordnikApiKey: apiKey.isNotEmpty ? apiKey : AppConstants.wordnikApiKey,
+      showSyllables: showSyllables,
     );
   }
 
@@ -70,11 +73,17 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
     await prefs.setString(AppConstants.sheetIdKey, sheetId);
     await prefs.setString('wordnik_api_key', wordnikApiKey);
 
-    state = SettingsState(
+    state = state.copyWith(
       credentialsJson: credentialsJson,
       sheetId: sheetId,
       wordnikApiKey: wordnikApiKey,
     );
+  }
+  
+  Future<void> toggleSyllables(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('show_syllables', value);
+    state = state.copyWith(showSyllables: value);
   }
 }
 
@@ -129,7 +138,14 @@ final wordsListProvider = FutureProvider<List<WordItem>>((ref) async {
   // Check if it's a fallback list
   if (FallbackData.lists.containsKey(selectedList)) {
     final rawWords = FallbackData.lists[selectedList]!;
-    return rawWords.map((e) => WordItem(englishWord: e)).toList();
+    return rawWords.map((e) {
+       final english = e['english'] ?? '';
+       final hebrew = e['hebrew']; // Nullable
+       return WordItem(
+          englishWord: english,
+          hebrewWord: hebrew, 
+       );
+    }).toList();
   }
 
   final headers = await ref.watch(sheetHeadersProvider.future);
