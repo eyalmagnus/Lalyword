@@ -13,7 +13,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _jsonController;
   late TextEditingController _sheetIdController;
-  late TextEditingController _apiKeyController;
 
   @override
   void initState() {
@@ -21,14 +20,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final settings = ref.read(settingsProvider);
     _jsonController = TextEditingController(text: settings.credentialsJson);
     _sheetIdController = TextEditingController(text: settings.sheetId);
-    _apiKeyController = TextEditingController(text: settings.wordnikApiKey);
   }
 
   @override
   void dispose() {
     _jsonController.dispose();
     _sheetIdController.dispose();
-    _apiKeyController.dispose();
     super.dispose();
   }
 
@@ -37,7 +34,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       await ref.read(settingsProvider.notifier).saveSettings(
         credentialsJson: _jsonController.text.trim(),
         sheetId: _sheetIdController.text.trim(),
-        wordnikApiKey: _apiKeyController.text.trim(),
       );
       
       if (mounted) {
@@ -104,21 +100,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   }
                   return null;
                 },
-              ),
-              const SizedBox(height: 20),
-
-              const Text(
-                'Wordnik API Key (Optional)',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: _apiKeyController,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  hintText: 'your-api-key',
-                  helperText: 'Required for syllable dots (e.g. beau.ti.ful)',
-                ),
               ),
               const SizedBox(height: 30),
 

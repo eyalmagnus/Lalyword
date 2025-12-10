@@ -134,32 +134,43 @@ class _FlashcardContentState extends ConsumerState<FlashcardContent> {
     if (_enriching) return;
     
     // Check if we need to enrich (missing audio/syllables or missing translation AND Hebrew)
-    // Note: if sheet had hebrew, we might not need translation service.
-    // If audioUrl is null, we try dictionary.
+    // Treat empty strings the same as null (missing data)
     
-    bool needsDictionary = widget.word.audioUrl == null || widget.word.syllables == null;
-    bool needsTranslation = widget.word.hebrewWord == null;
+    bool needsDictionary = widget.word.audioUrl == null || 
+                          widget.word.audioUrl!.isEmpty ||
+                          widget.word.syllables == null || 
+                          widget.word.syllables!.isEmpty;
+    bool needsTranslation = widget.word.hebrewWord == null || 
+                           widget.word.hebrewWord!.isEmpty;
     
     if (!needsDictionary && !needsTranslation) return;
 
     setState(() => _enriching = true);
 
     WordItem updated = widget.word;
+    print('=== ENRICHMENT START for: ${widget.word.englishWord} ===');
+    print('Initial syllables: "${updated.syllables}"');
+    print('Initial hebrewWord: "${updated.hebrewWord}"');
 
     // 1. Dictionary
     if (needsDictionary) {
       final dictService = ref.read(dictionaryServiceProvider);
+      print('Calling enrichWord');
       updated = await dictService.enrichWord(updated);
+      print('After enrichWord - syllables: "${updated.syllables}", audioUrl: ${updated.audioUrl}');
     }
 
     // 2. Translation
-    if (updated.hebrewWord == null) {
+    if (updated.hebrewWord == null || updated.hebrewWord!.isEmpty) {
       final transService = ref.read(translationServiceProvider);
       final rawDetails = await transService.translate(updated.englishWord);
       if (rawDetails != null) {
         updated = updated.copyWith(hebrewWord: rawDetails);
+        print('After translation - hebrewWord: "${updated.hebrewWord}"');
       }
     }
+
+    print('=== ENRICHMENT END - Final syllables: "${updated.syllables}" ===');
 
     if (mounted) {
        widget.onEnrich(updated);
@@ -243,7 +254,9 @@ class _FlashcardContentState extends ConsumerState<FlashcardContent> {
                       
                       Builder(builder: (context) {
                          // Use local state
-                         final hasSyllables = widget.word.syllables != null;
+                         // Check both null AND empty string
+                         final hasSyllables = widget.word.syllables != null && 
+                                            widget.word.syllables!.isNotEmpty;
                          
                          var displayText = (_showSyllablesLocal && hasSyllables) 
                              ? widget.word.syllables! 

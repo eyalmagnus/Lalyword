@@ -1,9 +1,9 @@
 class AppConstants {
   static const String freeDictionaryApiUrl = 'https://api.dictionaryapi.dev/api/v2/entries/en';
-  static const String wordnikApiUrl = 'https://api.wordnik.com/v4/word.json';
+  static const String merriamWebsterApiUrl = 'https://www.dictionaryapi.com/api/v3/references/learners/json';
   
-  // Replace with your Wordnik API key
-  static const String wordnikApiKey = ''; 
+  // Merriam-Webster Learner's Dictionary API key (hard-coded)
+  static const String merriamWebsterApiKey = '9889d0a7-7134-422d-a084-89e0d918a363'; 
   
   static const String sheetCredentialsKey = 'sheet_credentials';
   static const String sheetIdKey = 'sheet_id';

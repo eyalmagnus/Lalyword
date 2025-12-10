@@ -14,14 +14,12 @@ final translationServiceProvider = Provider<TranslationService>((ref) => Transla
 class SettingsState {
   final String credentialsJson;
   final String sheetId;
-  final String wordnikApiKey;
   final bool isConfigured;
   final bool showSyllables;
 
   SettingsState({
     this.credentialsJson = '',
     this.sheetId = '',
-    this.wordnikApiKey = '',
     this.isConfigured = false,
     this.showSyllables = false,
   });
@@ -29,13 +27,11 @@ class SettingsState {
   SettingsState copyWith({
     String? credentialsJson,
     String? sheetId,
-    String? wordnikApiKey,
     bool? showSyllables,
   }) {
     return SettingsState(
       credentialsJson: credentialsJson ?? this.credentialsJson,
       sheetId: sheetId ?? this.sheetId,
-      wordnikApiKey: wordnikApiKey ?? this.wordnikApiKey,
       isConfigured: (credentialsJson ?? this.credentialsJson).isNotEmpty && 
                     (sheetId ?? this.sheetId).isNotEmpty,
       showSyllables: showSyllables ?? this.showSyllables,
@@ -52,13 +48,11 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
     final prefs = await SharedPreferences.getInstance();
     final creds = prefs.getString(AppConstants.sheetCredentialsKey) ?? '';
     final sid = prefs.getString(AppConstants.sheetIdKey) ?? '';
-    final apiKey = prefs.getString('wordnik_api_key') ?? '';
     final showSyllables = prefs.getBool('show_syllables') ?? false;
     
     state = SettingsState(
       credentialsJson: creds,
       sheetId: sid,
-      wordnikApiKey: apiKey.isNotEmpty ? apiKey : AppConstants.wordnikApiKey,
       showSyllables: showSyllables,
     );
   }
@@ -66,17 +60,14 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
   Future<void> saveSettings({
     required String credentialsJson,
     required String sheetId,
-    required String wordnikApiKey,
   }) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(AppConstants.sheetCredentialsKey, credentialsJson);
     await prefs.setString(AppConstants.sheetIdKey, sheetId);
-    await prefs.setString('wordnik_api_key', wordnikApiKey);
 
     state = state.copyWith(
       credentialsJson: credentialsJson,
       sheetId: sheetId,
-      wordnikApiKey: wordnikApiKey,
     );
   }
   
