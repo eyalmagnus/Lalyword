@@ -58,6 +58,16 @@ class ListSelectionScreen extends ConsumerWidget {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
+                  subtitle: headers[name] == -1 
+                    ? const Text('Built-in List', style: TextStyle(fontSize: 12, color: Colors.grey))
+                    : const Text('From Google Sheet', style: TextStyle(fontSize: 12, color: Colors.blue)),
+                  leading: CircleAvatar(
+                    backgroundColor: headers[name] == -1 ? Colors.orange.shade100 : Colors.blue.shade100,
+                    child: Icon(
+                      headers[name] == -1 ? Icons.local_library : Icons.cloud,
+                      color: headers[name] == -1 ? Colors.orange : Colors.blue,
+                    ),
+                  ),
                   trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                   onTap: () {
                     ref.read(selectedListProvider.notifier).state = name;

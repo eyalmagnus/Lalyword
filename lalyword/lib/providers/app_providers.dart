@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../services/services.dart';
 import '../config/constants.dart';
 import '../models/word_item.dart';
+import '../config/fallback_data.dart';
 
 // Service Providers
 final sheetServiceProvider = Provider<SheetService>((ref) => SheetService());
@@ -99,11 +100,22 @@ final sheetInitProvider = FutureProvider<bool>((ref) async {
 
 // Headers Provider (List Names)
 final sheetHeadersProvider = FutureProvider<Map<String, int>>((ref) async {
+  final fallbackLists = FallbackData.lists.keys.fold(<String, int>{}, (map, key) {
+    map[key] = -1; // -1 indicates fallback list
+    return map;
+  });
+
   final isReady = await ref.watch(sheetInitProvider.future);
-  if (!isReady) return {};
+  if (!isReady) return fallbackLists;
   
   final sheetService = ref.read(sheetServiceProvider);
-  return sheetService.getHeaders();
+  try {
+    final sheetHeaders = await sheetService.getHeaders();
+    return {...fallbackLists, ...sheetHeaders};
+  } catch (e) {
+    print('Error fetching sheet headers: $e');
+    return fallbackLists;
+  }
 });
 
 // Selected List Provider
@@ -114,10 +126,16 @@ final wordsListProvider = FutureProvider<List<WordItem>>((ref) async {
   final selectedList = ref.watch(selectedListProvider);
   if (selectedList == null) return [];
   
+  // Check if it's a fallback list
+  if (FallbackData.lists.containsKey(selectedList)) {
+    final rawWords = FallbackData.lists[selectedList]!;
+    return rawWords.map((e) => WordItem(englishWord: e)).toList();
+  }
+
   final headers = await ref.watch(sheetHeadersProvider.future);
   final index = headers[selectedList];
   
-  if (index == null) return [];
+  if (index == null || index == -1) return []; // Should be caught by fallback check if -1
   
   final sheetService = ref.read(sheetServiceProvider);
   return sheetService.getWordsExample(index);

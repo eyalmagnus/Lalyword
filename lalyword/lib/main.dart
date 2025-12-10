@@ -30,22 +30,9 @@ class LalyApp extends ConsumerWidget {
         useMaterial3: true,
         fontFamily: 'Roboto', 
       ),
-      home: const HomeWrapper(),
+      home: const ListSelectionScreen(),
     );
   }
 }
 
-class HomeWrapper extends ConsumerWidget {
-  const HomeWrapper({super.key});
 
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final settings = ref.watch(settingsProvider);
-    
-    if (!settings.isConfigured) {
-      return const SettingsScreen();
-    }
-    
-    return const ListSelectionScreen();
-  }
-}
