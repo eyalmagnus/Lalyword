@@ -275,12 +275,16 @@ class _FlashcardContentState extends ConsumerState<FlashcardContent> {
                                   // Invisible spacer to balance the icon if we want it strictly centered
                                   // Or just place icon to the right/top-right
                                   Flexible(
-                                    child: Text(
-                                      displayText,
-                                      style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                                        fontWeight: FontWeight.bold,
+                                    child: FittedBox(
+                                      fit: BoxFit.scaleDown,
+                                      child: Text(
+                                        displayText,
+                                        style: Theme.of(context).textTheme.displayMedium?.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                        textAlign: TextAlign.center,
+                                        maxLines: 1,
                                       ),
-                                      textAlign: TextAlign.center,
                                     ),
                                   ),
                                   if (hasSyllables) 
