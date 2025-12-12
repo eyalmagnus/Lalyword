@@ -66,6 +66,25 @@ class FallbackData {
       {'english': 'sandwich', 'hebrew': '', 'syllables': ''}, 
       {'english': 'telephone', 'hebrew': '', 'syllables': ''}
     ],
+    'Elephants': [
+      {'english': 'elephants', 'hebrew': '', 'syllables': ''}, 
+      {'english': 'societies', 'hebrew': '', 'syllables': ''}, 
+      {'english': 'separate', 'hebrew': '', 'syllables': ''}, 
+      {'english': 'intelligent', 'hebrew': '', 'syllables': ''}, 
+      {'english': 'friendly', 'hebrew': '', 'syllables': ''},
+      {'english': 'human', 'hebrew': '', 'syllables': ''}, 
+      {'english': 'situation', 'hebrew': '', 'syllables': ''}, 
+      {'english': 'female', 'hebrew': '', 'syllables': ''}, 
+      {'english': 'deliver', 'hebrew': '', 'syllables': ''}, 
+      {'english': 'trunk', 'hebrew': 'חדק', 'syllables': ''},
+      {'english': 'babysitting', 'hebrew': '', 'syllables': ''}, 
+      {'english': 'leaves', 'hebrew': '', 'syllables': ''}, 
+      {'english': 'afterwards', 'hebrew': '', 'syllables': ''}, 
+      {'english': 'entertain', 'hebrew': '', 'syllables': ''}, 
+      {'english': 'themselves', 'hebrew': '', 'syllables': ''},
+      {'english': 'sucking', 'hebrew': '', 'syllables': ''}, 
+      {'english': 'behavior', 'hebrew': '', 'syllables': ''}
+    ],
   };
 }
 
