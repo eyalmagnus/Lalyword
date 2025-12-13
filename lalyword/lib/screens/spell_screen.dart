@@ -73,6 +73,31 @@ class _SpellScreenState extends ConsumerState<SpellScreen> {
     
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () async {
+            final confirmed = await showDialog<bool>(
+              context: context,
+              builder: (context) => AlertDialog(
+                title: const Text('Exit?'),
+                content: const Text('Are you sure? This will reset all "I know this word" checkboxes and reshuffle the order.'),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(false),
+                    child: const Text('Cancel'),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(true),
+                    child: const Text('Yes'),
+                  ),
+                ],
+              ),
+            );
+            if (confirmed == true && mounted) {
+              Navigator.of(context).pop();
+            }
+          },
+        ),
         title: Text(titleText),
         actions: [
           IconButton(
@@ -459,6 +484,8 @@ class _SpellContentState extends ConsumerState<SpellContent> {
                       textInputAction: TextInputAction.done,
                       keyboardType: TextInputType.text,
                       textCapitalization: TextCapitalization.none,
+                      autocorrect: false,
+                      enableSuggestions: false,
                       enabled: _isCorrect != true, // Disable if correct
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.bold,
@@ -566,6 +593,36 @@ class _SpellContentState extends ConsumerState<SpellContent> {
                           padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
                           backgroundColor: Theme.of(context).colorScheme.primary,
                           foregroundColor: Colors.white,
+                        ),
+                      ),
+                    
+                    // "I know this word" checkbox
+                    if (!_isFlipped)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 16.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Checkbox(
+                              value: widget.isKnown,
+                              onChanged: (_) => widget.onMarkKnown(),
+                              checkColor: Colors.white,
+                              fillColor: widget.isKnown 
+                                  ? WidgetStateProperty.all(Colors.green)
+                                  : WidgetStateProperty.all(null),
+                            ),
+                            Text(
+                              'I know this word',
+                              style: widget.isKnown
+                                  ? const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)
+                                  : null,
+                            ),
+                            if (widget.isKnown)
+                              const Padding(
+                                padding: EdgeInsets.only(left: 8.0),
+                                child: Icon(Icons.check_circle, color: Colors.green, size: 20),
+                              ),
+                          ],
                         ),
                       ),
                   ],

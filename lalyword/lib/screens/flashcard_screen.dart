@@ -64,6 +64,31 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen> {
     
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () async {
+            final confirmed = await showDialog<bool>(
+              context: context,
+              builder: (context) => AlertDialog(
+                title: const Text('Exit?'),
+                content: const Text('Are you sure? This will reset all "I know this word" checkboxes and reshuffle the order.'),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(false),
+                    child: const Text('Cancel'),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(true),
+                    child: const Text('Yes'),
+                  ),
+                ],
+              ),
+            );
+            if (confirmed == true && mounted) {
+              Navigator.of(context).pop();
+            }
+          },
+        ),
         title: Text(titleText),
         actions: [
           IconButton(
