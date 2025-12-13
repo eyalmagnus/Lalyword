@@ -408,7 +408,9 @@ class _FlashcardContentState extends ConsumerState<FlashcardContent> {
                       // Audio Button
                       IconButton.filled(
                         icon: const Icon(Icons.volume_up, size: 32),
-                        onPressed: _playSound,
+                        onPressed: (widget.word.audioUrl != null && widget.word.audioUrl!.isNotEmpty)
+                            ? _playSound
+                            : null,
                         style: IconButton.styleFrom(padding: const EdgeInsets.all(16)),
                       ),
                       
