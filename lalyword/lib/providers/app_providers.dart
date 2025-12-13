@@ -102,7 +102,12 @@ final sheetHeadersProvider = FutureProvider<Map<String, int>>((ref) async {
   final sheetService = ref.read(sheetServiceProvider);
   try {
     final sheetHeaders = await sheetService.getHeaders();
-    return {...fallbackLists, ...sheetHeaders};
+    // Only show fallback lists if no Google Sheet lists are present
+    if (sheetHeaders.isEmpty) {
+      return fallbackLists;
+    }
+    // If Google Sheet lists exist, hide fallback lists
+    return sheetHeaders;
   } catch (e) {
     print('Error fetching sheet headers: $e');
     return fallbackLists;
