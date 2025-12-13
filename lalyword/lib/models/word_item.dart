@@ -10,6 +10,7 @@ class WordItem {
   final int timesHeard; // Number of times this word was heard by sound
   final int timesSyllablesShown; // Number of times word was presented in syllables mode
   final int timesHebrewShown; // Number of times Hebrew translation has been shown
+  final int timesSpellChecked; // Number of times spelling was checked
 
   WordItem({
     required this.englishWord,
@@ -21,6 +22,7 @@ class WordItem {
     this.timesHeard = 0,
     this.timesSyllablesShown = 0,
     this.timesHebrewShown = 0,
+    this.timesSpellChecked = 0,
   });
 
   WordItem copyWith({
@@ -33,6 +35,7 @@ class WordItem {
     int? timesHeard,
     int? timesSyllablesShown,
     int? timesHebrewShown,
+    int? timesSpellChecked,
   }) {
     return WordItem(
       englishWord: englishWord ?? this.englishWord,
@@ -44,6 +47,7 @@ class WordItem {
       timesHeard: timesHeard ?? this.timesHeard,
       timesSyllablesShown: timesSyllablesShown ?? this.timesSyllablesShown,
       timesHebrewShown: timesHebrewShown ?? this.timesHebrewShown,
+      timesSpellChecked: timesSpellChecked ?? this.timesSpellChecked,
     );
   }
   
@@ -59,6 +63,7 @@ class WordItem {
       'timesHeard': timesHeard,
       'timesSyllablesShown': timesSyllablesShown,
       'timesHebrewShown': timesHebrewShown,
+      'timesSpellChecked': timesSpellChecked,
     };
   }
   
@@ -74,6 +79,7 @@ class WordItem {
       timesHeard: json['timesHeard'] as int? ?? 0,
       timesSyllablesShown: json['timesSyllablesShown'] as int? ?? 0,
       timesHebrewShown: json['timesHebrewShown'] as int? ?? 0,
+      timesSpellChecked: json['timesSpellChecked'] as int? ?? 0,
     );
   }
 }

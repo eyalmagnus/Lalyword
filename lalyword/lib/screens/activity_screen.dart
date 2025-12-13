@@ -216,6 +216,23 @@ class ActivityScreen extends ConsumerWidget {
               ),
             ),
           ),
+          Expanded(
+            flex: 12,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 8.0),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: const Text(
+                  'Spell Check',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -311,6 +328,17 @@ class ActivityScreen extends ConsumerWidget {
               padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 8.0),
               child: Text(
                 '${word.timesHebrewShown}',
+                style: const TextStyle(fontSize: 12),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
+          Expanded(
+            flex: 12,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 8.0),
+              child: Text(
+                '${word.timesSpellChecked}',
                 style: const TextStyle(fontSize: 12),
                 textAlign: TextAlign.center,
               ),

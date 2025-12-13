@@ -324,6 +324,40 @@ class _SpellContentState extends ConsumerState<SpellContent> {
         widget.onMarkKnown();
       }
     });
+    
+    // Track spelling check activity
+    _trackSpellChecked();
+  }
+  
+  Future<void> _trackSpellChecked() async {
+    // Get the current word from the session
+    final notifier = ref.read(sessionProvider.notifier);
+    final currentWord = notifier.currentWord;
+    
+    if (currentWord == null) return;
+    
+    final storageService = ref.read(storageServiceProvider);
+    
+    // Load the latest word from storage to ensure we have the most recent activity data
+    final allWords = await storageService.getAllWordsWithActivity();
+    final storedWord = allWords.firstWhere(
+      (w) => w.englishWord.toLowerCase() == currentWord.englishWord.toLowerCase(),
+      orElse: () => currentWord,
+    );
+    
+    // Use the stored word's count if available, otherwise use current word's count
+    final currentCount = storedWord.timesSpellChecked;
+    final newCount = currentCount + 1;
+    
+    print('Tracking spell check for ${currentWord.englishWord}: $currentCount -> $newCount');
+    
+    // Create updated word with incremented count, preserving all other data from stored word
+    final updated = storedWord.copyWith(timesSpellChecked: newCount);
+    await storageService.updateWordActivity(updated);
+    print('Saved spell check count: ${updated.timesSpellChecked}');
+    
+    // Also update in session
+    widget.onEnrich(updated);
   }
 
   Widget _buildLetterFeedback(String typedText, String correctWord) {

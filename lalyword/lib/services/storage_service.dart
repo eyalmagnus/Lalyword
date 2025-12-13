@@ -50,6 +50,7 @@ class StorageService {
                 timesHeard: globalWord.timesHeard,
                 timesSyllablesShown: globalWord.timesSyllablesShown,
                 timesHebrewShown: globalWord.timesHebrewShown,
+                timesSpellChecked: globalWord.timesSpellChecked,
               );
             }
           }
@@ -83,8 +84,23 @@ class StorageService {
       }
     }
     
-    // Update or add the word
-    allWords[word.englishWord.toLowerCase()] = word;
+    // Merge activity data: preserve existing activity if present, otherwise use new word's activity
+    final key = word.englishWord.toLowerCase();
+    if (allWords.containsKey(key)) {
+      // Merge: use the maximum of existing and new values for each activity counter
+      // This ensures we never lose activity data
+      final existing = allWords[key]!;
+      allWords[key] = word.copyWith(
+        timesShown: word.timesShown > existing.timesShown ? word.timesShown : existing.timesShown,
+        timesHeard: word.timesHeard > existing.timesHeard ? word.timesHeard : existing.timesHeard,
+        timesSyllablesShown: word.timesSyllablesShown > existing.timesSyllablesShown ? word.timesSyllablesShown : existing.timesSyllablesShown,
+        timesHebrewShown: word.timesHebrewShown > existing.timesHebrewShown ? word.timesHebrewShown : existing.timesHebrewShown,
+        timesSpellChecked: word.timesSpellChecked > existing.timesSpellChecked ? word.timesSpellChecked : existing.timesSpellChecked,
+      );
+    } else {
+      // New word, add it
+      allWords[key] = word;
+    }
     
     // Save back
     final jsonList = allWords.values.map((w) => w.toJson()).toList();
@@ -150,6 +166,7 @@ class StorageService {
           timesHeard: existing.timesHeard,
           timesSyllablesShown: existing.timesSyllablesShown,
           timesHebrewShown: existing.timesHebrewShown,
+          timesSpellChecked: existing.timesSpellChecked,
         );
       } else {
         // New word, add it
