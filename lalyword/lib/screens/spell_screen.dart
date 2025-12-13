@@ -66,7 +66,10 @@ class _SpellScreenState extends ConsumerState<SpellScreen> {
       );
     }
 
-    final titleText = 'Word ${notifier.currentVisiblePosition} / ${notifier.visibleCount}';
+    final isCurrentKnown = notifier.isWordKnown(currentWord);
+    final titleText = isCurrentKnown 
+        ? 'Word (checked) / ${notifier.visibleCount}'
+        : 'Word ${notifier.currentVisiblePosition} / ${notifier.visibleCount}';
     
     return Scaffold(
       appBar: AppBar(
@@ -105,6 +108,7 @@ class _SpellScreenState extends ConsumerState<SpellScreen> {
       ),
       body: SpellContent(
         word: currentWord,
+        isKnown: notifier.isWordKnown(currentWord),
         onNext: () {
           notifier.next();
           _textController.clear();
@@ -120,6 +124,7 @@ class _SpellScreenState extends ConsumerState<SpellScreen> {
           });
         },
         onEnrich: (enriched) => notifier.updateCurrentItem(enriched),
+        onMarkKnown: () => notifier.toggleWordKnown(currentWord),
         textController: _textController,
         focusNode: _focusNode,
       ),
@@ -129,18 +134,22 @@ class _SpellScreenState extends ConsumerState<SpellScreen> {
 
 class SpellContent extends ConsumerStatefulWidget {
   final WordItem word;
+  final bool isKnown;
   final VoidCallback onNext;
   final VoidCallback onPrev;
   final Function(WordItem) onEnrich;
+  final VoidCallback onMarkKnown;
   final TextEditingController textController;
   final FocusNode focusNode;
 
   const SpellContent({
     super.key,
     required this.word,
+    required this.isKnown,
     required this.onNext,
     required this.onPrev,
     required this.onEnrich,
+    required this.onMarkKnown,
     required this.textController,
     required this.focusNode,
   });
@@ -153,17 +162,28 @@ class _SpellContentState extends ConsumerState<SpellContent> {
   final AudioPlayer _audioPlayer = AudioPlayer();
   bool _enriching = false;
   bool _isFlipped = false;
-
+  bool? _isCorrect; // null = not checked, true = correct, false = incorrect
+  String? _lastCheckedText; // Store the last checked text for highlighting
+  
   @override
   void initState() {
     super.initState();
     _checkEnrichment();
+    // Listen to text changes to enable/disable check button
+    widget.textController.addListener(_onTextChanged);
     // Request focus after the widget is built
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         widget.focusNode.requestFocus();
       }
     });
+  }
+  
+  void _onTextChanged() {
+    // Update state when text changes to rebuild button
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   @override
@@ -177,6 +197,8 @@ class _SpellContentState extends ConsumerState<SpellContent> {
       setState(() {
         _enriching = false;
         _isFlipped = false; // Reset flip state when word changes
+        _isCorrect = null; // Reset check state
+        _lastCheckedText = null;
       });
       _checkEnrichment();
     }
@@ -184,6 +206,7 @@ class _SpellContentState extends ConsumerState<SpellContent> {
 
   @override
   void dispose() {
+    widget.textController.removeListener(_onTextChanged);
     _audioPlayer.dispose();
     super.dispose();
   }
@@ -259,6 +282,91 @@ class _SpellContentState extends ConsumerState<SpellContent> {
     });
   }
 
+  void _checkSpelling() {
+    final typedText = widget.textController.text.trim().toLowerCase();
+    final correctWord = widget.word.englishWord.toLowerCase();
+    
+    if (typedText.isEmpty) {
+      return; // Don't check empty input
+    }
+    
+    setState(() {
+      _lastCheckedText = typedText;
+      _isCorrect = typedText == correctWord;
+      
+      if (_isCorrect == true) {
+        // Mark as known when correct
+        widget.onMarkKnown();
+      }
+    });
+  }
+
+  Widget _buildLetterFeedback(String typedText, String correctWord) {
+    final List<Widget> letterWidgets = [];
+    
+    // Calculate size based on word length to fit up to 15 letters
+    final wordLength = typedText.length;
+    final fontSize = wordLength > 12 ? 12.0 : wordLength > 10 ? 13.0 : 14.0;
+    final horizontalPadding = wordLength > 12 ? 3.0 : wordLength > 10 ? 4.0 : 5.0;
+    final verticalPadding = wordLength > 12 ? 2.0 : wordLength > 10 ? 3.0 : 3.0;
+    final horizontalMargin = wordLength > 12 ? 1.0 : wordLength > 10 ? 1.0 : 2.0;
+    final borderWidth = wordLength > 12 ? 1.0 : wordLength > 10 ? 1.5 : 2.0;
+    
+    for (int i = 0; i < typedText.length; i++) {
+      if (i < correctWord.length && typedText[i] == correctWord[i]) {
+        // Correct letter in correct position - green
+        letterWidgets.add(
+          Container(
+            margin: EdgeInsets.symmetric(horizontal: horizontalMargin),
+            padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: verticalPadding),
+            decoration: BoxDecoration(
+              color: Colors.green.withOpacity(0.2),
+              border: Border.all(color: Colors.green, width: borderWidth),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Text(
+              typedText[i],
+              style: TextStyle(
+                color: Colors.green,
+                fontWeight: FontWeight.bold,
+                fontSize: fontSize,
+              ),
+            ),
+          ),
+        );
+      } else {
+        // Incorrect letter or position - red
+        letterWidgets.add(
+          Container(
+            margin: EdgeInsets.symmetric(horizontal: horizontalMargin),
+            padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: verticalPadding),
+            decoration: BoxDecoration(
+              color: Colors.red.withOpacity(0.2),
+              border: Border.all(color: Colors.red, width: borderWidth),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Text(
+              typedText[i],
+              style: TextStyle(
+                color: Colors.red,
+                fontWeight: FontWeight.bold,
+                fontSize: fontSize,
+              ),
+            ),
+          ),
+        );
+      }
+    }
+    
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: letterWidgets,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -276,9 +384,10 @@ class _SpellContentState extends ConsumerState<SpellContent> {
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
             child: Padding(
               padding: const EdgeInsets.all(32.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
                   if (_isFlipped) ...[
                     // ENGLISH SIDE (flipped)
                     Text(
@@ -304,7 +413,7 @@ class _SpellContentState extends ConsumerState<SpellContent> {
                       textDirection: TextDirection.rtl,
                     ),
                     
-                    const SizedBox(height: 32),
+                    SizedBox(height: _isCorrect == false ? 24 : 32),
                     
                     // Sound button
                     if (_enriching)
@@ -321,7 +430,7 @@ class _SpellContentState extends ConsumerState<SpellContent> {
                         style: IconButton.styleFrom(padding: const EdgeInsets.all(16)),
                       ),
                     
-                    const SizedBox(height: 32),
+                    SizedBox(height: _isCorrect == false ? 24 : 32),
                     
                     // Text input field
                     TextField(
@@ -331,14 +440,48 @@ class _SpellContentState extends ConsumerState<SpellContent> {
                       textInputAction: TextInputAction.done,
                       keyboardType: TextInputType.text,
                       textCapitalization: TextCapitalization.none,
+                      enabled: _isCorrect != true, // Disable if correct
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.bold,
+                        color: _isCorrect == true ? Colors.white : null,
                       ),
                       textAlign: TextAlign.center,
                       decoration: InputDecoration(
-                        hintText: 'Type the word...',
+                        hintText: _isCorrect == true ? 'Correct!' : 'Type the word...',
+                        filled: _isCorrect == true,
+                        fillColor: _isCorrect == true ? Colors.green : null,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(
+                            color: _isCorrect == true 
+                                ? Colors.green 
+                                : _isCorrect == false 
+                                    ? Colors.red 
+                                    : Theme.of(context).inputDecorationTheme.border?.borderSide.color ?? Colors.grey,
+                            width: _isCorrect != null ? 3 : 1,
+                          ),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(
+                            color: _isCorrect == true 
+                                ? Colors.green 
+                                : _isCorrect == false 
+                                    ? Colors.red 
+                                    : Colors.grey,
+                            width: _isCorrect != null ? 3 : 1,
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(
+                            color: _isCorrect == true 
+                                ? Colors.green 
+                                : _isCorrect == false 
+                                    ? Colors.red 
+                                    : Theme.of(context).colorScheme.primary,
+                            width: _isCorrect != null ? 3 : 2,
+                          ),
                         ),
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: 16,
@@ -351,10 +494,64 @@ class _SpellContentState extends ConsumerState<SpellContent> {
                       onTap: () {
                         widget.focusNode.requestFocus();
                       },
+                      onChanged: (value) {
+                        // Reset check state when user types again after checking
+                        if (_isCorrect != null && value != _lastCheckedText) {
+                          setState(() {
+                            _isCorrect = null;
+                            _lastCheckedText = null;
+                          });
+                        }
+                      },
                     ),
+                    
+                    // Show letter-by-letter feedback for incorrect spelling
+                    if (_isCorrect == false && _lastCheckedText != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 12.0, left: 8.0, right: 8.0),
+                        child: _buildLetterFeedback(_lastCheckedText!, widget.word.englishWord.toLowerCase()),
+                      ),
+                    
+                    // Success message when correct
+                    if (_isCorrect == true)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 12.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: const [
+                            Icon(Icons.check_circle, color: Colors.green, size: 24),
+                            SizedBox(width: 8),
+                            Text(
+                              'Correct!',
+                              style: TextStyle(
+                                color: Colors.green,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    
+                    SizedBox(height: _isCorrect == false ? 16 : 24),
+                    
+                    // Check button
+                    if (!_isFlipped)
+                      ElevatedButton.icon(
+                        onPressed: (widget.textController.text.trim().isEmpty || _isCorrect == true) 
+                            ? null 
+                            : _checkSpelling,
+                        icon: const Icon(Icons.check),
+                        label: const Text('Check'),
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                          backgroundColor: Theme.of(context).colorScheme.primary,
+                          foregroundColor: Colors.white,
+                        ),
+                      ),
                   ],
                   
-                  const Spacer(),
+                  const SizedBox(height: 16),
                   
                   const Text(
                     'Swipe Up/Down for Next/Prev',
@@ -364,7 +561,8 @@ class _SpellContentState extends ConsumerState<SpellContent> {
                     'Swipe Left/Right to Flip',
                     style: TextStyle(color: Colors.grey),
                   ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
