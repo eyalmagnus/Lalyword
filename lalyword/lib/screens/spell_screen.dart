@@ -305,12 +305,12 @@ class _SpellContentState extends ConsumerState<SpellContent> {
     final List<Widget> letterWidgets = [];
     
     // Calculate size based on word length to fit up to 15 letters
-    final wordLength = typedText.length;
-    final fontSize = wordLength > 12 ? 12.0 : wordLength > 10 ? 13.0 : 14.0;
-    final horizontalPadding = wordLength > 12 ? 3.0 : wordLength > 10 ? 4.0 : 5.0;
-    final verticalPadding = wordLength > 12 ? 2.0 : wordLength > 10 ? 3.0 : 3.0;
-    final horizontalMargin = wordLength > 12 ? 1.0 : wordLength > 10 ? 1.0 : 2.0;
-    final borderWidth = wordLength > 12 ? 1.0 : wordLength > 10 ? 1.5 : 2.0;
+    final maxWordLength = correctWord.length > typedText.length ? correctWord.length : typedText.length;
+    final fontSize = maxWordLength > 12 ? 12.0 : maxWordLength > 10 ? 13.0 : 14.0;
+    final horizontalPadding = maxWordLength > 12 ? 3.0 : maxWordLength > 10 ? 4.0 : 5.0;
+    final verticalPadding = maxWordLength > 12 ? 2.0 : maxWordLength > 10 ? 3.0 : 3.0;
+    final horizontalMargin = maxWordLength > 12 ? 1.0 : maxWordLength > 10 ? 1.0 : 2.0;
+    final borderWidth = maxWordLength > 12 ? 1.0 : maxWordLength > 10 ? 1.5 : 2.0;
     
     for (int i = 0; i < typedText.length; i++) {
       if (i < correctWord.length && typedText[i] == correctWord[i]) {
@@ -356,6 +356,25 @@ class _SpellContentState extends ConsumerState<SpellContent> {
           ),
         );
       }
+    }
+    
+    // Add empty red containers for missing letters if typed text is shorter
+    if (typedText.length < correctWord.length) {
+      letterWidgets.add(
+        Container(
+          margin: EdgeInsets.symmetric(horizontal: horizontalMargin),
+          padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: verticalPadding),
+          decoration: BoxDecoration(
+            color: Colors.red.withOpacity(0.2),
+            border: Border.all(color: Colors.red, width: borderWidth),
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: SizedBox(
+            width: fontSize * 0.7, // Approximate width of a letter
+            height: fontSize * 1.2,
+          ),
+        ),
+      );
     }
     
     return SingleChildScrollView(
