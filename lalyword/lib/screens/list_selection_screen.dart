@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/app_providers.dart';
 import 'flashcard_screen.dart';
 import 'settings_screen.dart';
+import 'activity_screen.dart';
 
 class ListSelectionScreen extends ConsumerWidget {
   const ListSelectionScreen({super.key});
@@ -48,6 +49,16 @@ class ListSelectionScreen extends ConsumerWidget {
                   },
                 ),
               ),
+              const PopupMenuItem(
+                value: 3,
+                child: Row(
+                  children: [
+                    Icon(Icons.analytics, color: Colors.grey),
+                    SizedBox(width: 8),
+                    Text('See Activity'),
+                  ],
+                ),
+              ),
             ],
             onSelected: (value) async {
               if (value == 1) {
@@ -62,6 +73,11 @@ class ListSelectionScreen extends ConsumerWidget {
                  ScaffoldMessenger.of(context).showSnackBar(
                    SnackBar(content: Text(!current ? 'Syllables Enabled' : 'Syllables Disabled')),
                  );
+              } else if (value == 3) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const ActivityScreen()),
+                );
               }
             },
           ),

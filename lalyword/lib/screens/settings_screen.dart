@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/app_providers.dart';
+import 'activity_screen.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -37,7 +38,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           const SnackBar(content: Text('Settings Saved')),
         );
         // Force re-init check
-        ref.refresh(sheetInitProvider);
+        ref.invalidate(sheetInitProvider);
       }
     }
   }
@@ -81,6 +82,23 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 child: FilledButton(
                   onPressed: _save,
                   child: const Text('Save & Connect'),
+                ),
+              ),
+              
+              const SizedBox(height: 30),
+              
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const ActivityScreen()),
+                    );
+                  },
+                  icon: const Icon(Icons.analytics),
+                  label: const Text('See Activity'),
                 ),
               ),
             ],

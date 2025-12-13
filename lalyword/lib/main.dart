@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'screens/settings_screen.dart';
 import 'screens/list_selection_screen.dart';
-import 'providers/app_providers.dart';
 
 void main() {
   runApp(

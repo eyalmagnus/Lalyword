@@ -101,6 +101,7 @@ class _FlashcardContentState extends ConsumerState<FlashcardContent> {
   // Local toggle state. Initialized from global settings.
   late bool _showSyllablesLocal;
   final AudioPlayer _audioPlayer = AudioPlayer();
+  bool _syllablesTrackedForCurrentWord = false; // Track if we've already counted syllables for this word
 
   @override
   void initState() {
@@ -108,6 +109,8 @@ class _FlashcardContentState extends ConsumerState<FlashcardContent> {
     // Initialize local state from global settings
     _showSyllablesLocal = ref.read(settingsProvider).showSyllables;
     _checkEnrichment();
+    // Track that word was shown
+    _trackWordShown();
   }
 
   @override
@@ -119,8 +122,11 @@ class _FlashcardContentState extends ConsumerState<FlashcardContent> {
         _enriching = false;
         // Reset local state when word changes
         _showSyllablesLocal = ref.read(settingsProvider).showSyllables;
+        _syllablesTrackedForCurrentWord = false;
       });
       _checkEnrichment();
+      // Track that new word was shown
+      _trackWordShown();
     }
   }
   
@@ -182,6 +188,8 @@ class _FlashcardContentState extends ConsumerState<FlashcardContent> {
     if (widget.word.audioUrl != null) {
       try {
         await _audioPlayer.play(UrlSource(widget.word.audioUrl!));
+        // Track that sound was heard
+        _trackSoundHeard();
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
            SnackBar(content: Text('Error playing audio: $e')),
@@ -206,9 +214,42 @@ class _FlashcardContentState extends ConsumerState<FlashcardContent> {
 
   void _handleHorizontalDrag(DragEndDetails details) {
     // Swipe Side -> Flip
+    final wasFlipped = _isFlipped;
     setState(() {
       _isFlipped = !_isFlipped;
     });
+    // Track Hebrew shown when flipping to Hebrew side
+    if (!wasFlipped && _isFlipped) {
+      _trackHebrewShown();
+    }
+  }
+  
+  // Track activity methods
+  Future<void> _trackWordShown() async {
+    final updated = widget.word.copyWith(timesShown: widget.word.timesShown + 1);
+    await _updateWordActivity(updated);
+  }
+  
+  Future<void> _trackSoundHeard() async {
+    final updated = widget.word.copyWith(timesHeard: widget.word.timesHeard + 1);
+    await _updateWordActivity(updated);
+  }
+  
+  Future<void> _trackSyllablesShown() async {
+    final updated = widget.word.copyWith(timesSyllablesShown: widget.word.timesSyllablesShown + 1);
+    await _updateWordActivity(updated);
+  }
+  
+  Future<void> _trackHebrewShown() async {
+    final updated = widget.word.copyWith(timesHebrewShown: widget.word.timesHebrewShown + 1);
+    await _updateWordActivity(updated);
+  }
+  
+  Future<void> _updateWordActivity(WordItem updatedWord) async {
+    final storageService = ref.read(storageServiceProvider);
+    await storageService.updateWordActivity(updatedWord);
+    // Also update in session
+    widget.onEnrich(updatedWord);
   }
 
   @override
@@ -266,6 +307,14 @@ class _FlashcardContentState extends ConsumerState<FlashcardContent> {
                          if (_showSyllablesLocal && hasSyllables && !displayText.contains('.')) {
                            displayText = '$displayText.';
                          }
+                         
+                         // Track syllables shown when displaying syllables (only once per word display)
+                         if (_showSyllablesLocal && hasSyllables && !_syllablesTrackedForCurrentWord) {
+                           WidgetsBinding.instance.addPostFrameCallback((_) {
+                             _trackSyllablesShown();
+                             _syllablesTrackedForCurrentWord = true;
+                           });
+                         }
 
                          return Column(
                            children: [
@@ -296,7 +345,13 @@ class _FlashcardContentState extends ConsumerState<FlashcardContent> {
                                       ),
                                       onPressed: () {
                                         setState(() {
+                                          final wasShowing = _showSyllablesLocal;
                                           _showSyllablesLocal = !_showSyllablesLocal;
+                                          // Track when syllables are toggled on
+                                          if (!wasShowing && _showSyllablesLocal && hasSyllables) {
+                                            _trackSyllablesShown();
+                                            _syllablesTrackedForCurrentWord = true;
+                                          }
                                         });
                                       },
                                       tooltip: _showSyllablesLocal ? 'Hide Syllables' : 'Show Syllables',

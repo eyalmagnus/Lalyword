@@ -9,6 +9,7 @@ import '../config/fallback_data.dart';
 final sheetServiceProvider = Provider<SheetService>((ref) => SheetService());
 final dictionaryServiceProvider = Provider<DictionaryService>((ref) => DictionaryService());
 final translationServiceProvider = Provider<TranslationService>((ref) => TranslationService());
+final storageServiceProvider = Provider<StorageService>((ref) => StorageService());
 
 // Settings State
 class SettingsState {
@@ -116,10 +117,19 @@ final wordsListProvider = FutureProvider<List<WordItem>>((ref) async {
   final selectedList = ref.watch(selectedListProvider);
   if (selectedList == null) return [];
   
+  final storageService = ref.read(storageServiceProvider);
+  
   // Check if it's a fallback list
   if (FallbackData.lists.containsKey(selectedList)) {
+    // Try to load from local storage first
+    final cachedWords = await storageService.loadWordsForList(selectedList);
+    if (cachedWords.isNotEmpty) {
+      return cachedWords;
+    }
+    
+    // Otherwise use fallback data
     final rawWords = FallbackData.lists[selectedList]!;
-    return rawWords.map((e) {
+    final words = rawWords.map((e) {
        final english = e['english'] ?? '';
        final hebrew = e['hebrew']; // Nullable
        final syllables = e['syllables']; // Nullable
@@ -129,15 +139,33 @@ final wordsListProvider = FutureProvider<List<WordItem>>((ref) async {
           syllables: syllables,
        );
     }).toList();
+    
+    // Save to local storage
+    await storageService.saveWordsForList(selectedList, words);
+    return words;
   }
 
+  // Try to load from local storage first
+  final cachedWords = await storageService.loadWordsForList(selectedList);
+  if (cachedWords.isNotEmpty) {
+    return cachedWords;
+  }
+
+  // Fetch from Google Sheets
   final headers = await ref.watch(sheetHeadersProvider.future);
   final index = headers[selectedList];
   
   if (index == null || index == -1) return []; // Should be caught by fallback check if -1
   
   final sheetService = ref.read(sheetServiceProvider);
-  return sheetService.getWordsExample(index);
+  final words = await sheetService.getWordsExample(index);
+  
+  // Save to local storage
+  if (words.isNotEmpty) {
+    await storageService.saveWordsForList(selectedList, words);
+  }
+  
+  return words;
 });
 
 // Session Manager (Randomization)
@@ -195,4 +223,12 @@ class SessionNotifier extends StateNotifier<List<WordItem>> {
 
 final sessionProvider = StateNotifierProvider<SessionNotifier, List<WordItem>>((ref) {
   return SessionNotifier();
+});
+
+// Activity Data Provider
+final activityDataProvider = FutureProvider<List<WordItem>>((ref) async {
+  final storageService = ref.read(storageServiceProvider);
+  final words = await storageService.getAllWordsWithActivity();
+  print('Activity data loaded: ${words.length} words');
+  return words;
 });
