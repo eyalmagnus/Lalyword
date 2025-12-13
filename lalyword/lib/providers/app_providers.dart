@@ -313,10 +313,13 @@ final sessionProvider = StateNotifierProvider<SessionNotifier, List<WordItem>>((
   return SessionNotifier();
 });
 
-// Activity Data Provider
-final activityDataProvider = FutureProvider<List<WordItem>>((ref) async {
+// Activity Data Provider - returns words grouped by list
+final activityDataProvider = FutureProvider<Map<String, List<WordItem>>>((ref) async {
   final storageService = ref.read(storageServiceProvider);
-  final words = await storageService.getAllWordsWithActivity();
-  print('Activity data loaded: ${words.length} words');
-  return words;
+  final headers = await ref.watch(sheetHeadersProvider.future);
+  final listNames = headers.keys.toList();
+  
+  final wordsByList = await storageService.getAllWordsByList(listNames);
+  print('Activity data loaded: ${wordsByList.length} lists');
+  return wordsByList;
 });

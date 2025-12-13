@@ -107,6 +107,20 @@ class StorageService {
     }
   }
 
+  // Get all words grouped by list name
+  Future<Map<String, List<WordItem>>> getAllWordsByList(List<String> listNames) async {
+    final Map<String, List<WordItem>> result = {};
+    
+    for (final listName in listNames) {
+      final words = await loadWordsForList(listName);
+      if (words.isNotEmpty) {
+        result[listName] = words;
+      }
+    }
+    
+    return result;
+  }
+
   // Update global activity list when words are saved
   Future<void> _updateGlobalActivityList(List<WordItem> newWords) async {
     final prefs = await SharedPreferences.getInstance();

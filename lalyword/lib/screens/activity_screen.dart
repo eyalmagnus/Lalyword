@@ -3,6 +3,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/app_providers.dart';
 import '../models/word_item.dart';
 
+// Helper class to represent list items (headers or words)
+class _ListItem {
+  final bool isHeader;
+  final String? listName;
+  final WordItem? word;
+
+  _ListItem({
+    required this.isHeader,
+    this.listName,
+    this.word,
+  });
+}
+
 class ActivityScreen extends ConsumerWidget {
   const ActivityScreen({super.key});
 
@@ -24,8 +37,8 @@ class ActivityScreen extends ConsumerWidget {
         ],
       ),
       body: activityAsync.when(
-        data: (words) {
-          if (words.isEmpty) {
+        data: (wordsByList) {
+          if (wordsByList.isEmpty) {
             return const Center(
               child: Padding(
                 padding: EdgeInsets.all(16.0),
@@ -37,9 +50,25 @@ class ActivityScreen extends ConsumerWidget {
             );
           }
 
-          // Sort words alphabetically by English word
-          final sortedWords = List<WordItem>.from(words)
-            ..sort((a, b) => a.englishWord.toLowerCase().compareTo(b.englishWord.toLowerCase()));
+          // Prepare list items: section headers + words, sorted alphabetically by list name
+          final sortedListNames = wordsByList.keys.toList()
+            ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+          
+          // Build a list of items: alternating section headers and words
+          final List<_ListItem> items = [];
+          for (final listName in sortedListNames) {
+            final words = wordsByList[listName]!;
+            // Sort words alphabetically within each list
+            final sortedWords = List<WordItem>.from(words)
+              ..sort((a, b) => a.englishWord.toLowerCase().compareTo(b.englishWord.toLowerCase()));
+            
+            // Add section header
+            items.add(_ListItem(isHeader: true, listName: listName));
+            // Add words
+            for (final word in sortedWords) {
+              items.add(_ListItem(isHeader: false, word: word));
+            }
+          }
 
           return Column(
             children: [
@@ -48,13 +77,17 @@ class ActivityScreen extends ConsumerWidget {
                 color: Theme.of(context).colorScheme.surface,
                 child: _buildHeaderRow(context),
               ),
-              // Table rows
+              // Table rows with section headers
               Expanded(
                 child: ListView.builder(
-                  itemCount: sortedWords.length,
+                  itemCount: items.length,
                   itemBuilder: (context, index) {
-                    final word = sortedWords[index];
-                    return _buildDataRow(context, word);
+                    final item = items[index];
+                    if (item.isHeader) {
+                      return _buildSectionHeader(context, item.listName!);
+                    } else {
+                      return _buildDataRow(context, item.word!);
+                    }
                   },
                 ),
               ),
@@ -184,6 +217,35 @@ class ActivityScreen extends ConsumerWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(BuildContext context, String listName) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.secondaryContainer.withOpacity(0.3),
+        border: Border(
+          top: BorderSide(
+            color: Theme.of(context).dividerColor,
+            width: 2,
+          ),
+          bottom: BorderSide(
+            color: Theme.of(context).dividerColor,
+            width: 1,
+          ),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+        child: Text(
+          listName,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+        ),
       ),
     );
   }
