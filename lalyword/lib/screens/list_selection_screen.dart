@@ -2,19 +2,54 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/app_providers.dart';
 import 'flashcard_screen.dart';
+import 'spell_screen.dart';
 import 'settings_screen.dart';
 import 'activity_screen.dart';
 
-class ListSelectionScreen extends ConsumerWidget {
+enum PracticeMode { memo, spell }
+
+class ListSelectionScreen extends ConsumerStatefulWidget {
   const ListSelectionScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ListSelectionScreen> createState() => _ListSelectionScreenState();
+}
+
+class _ListSelectionScreenState extends ConsumerState<ListSelectionScreen> with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+  PracticeMode _selectedMode = PracticeMode.memo;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(() {
+      setState(() {
+        _selectedMode = _tabController.index == 0 ? PracticeMode.memo : PracticeMode.spell;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final headersAsync = ref.watch(sheetHeadersProvider);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Select a List'),
+        bottom: TabBar(
+          controller: _tabController,
+          tabs: const [
+            Tab(text: 'Memo'),
+            Tab(text: 'Spell'),
+          ],
+        ),
         actions: [
           PopupMenuButton<int>(
             icon: const Icon(Icons.settings),
@@ -128,12 +163,21 @@ class ListSelectionScreen extends ConsumerWidget {
                   trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                   onTap: () {
                     ref.read(selectedListProvider.notifier).state = name;
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const FlashcardScreen(),
-                      ),
-                    );
+                    if (_selectedMode == PracticeMode.memo) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const FlashcardScreen(),
+                        ),
+                      );
+                    } else {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const SpellScreen(),
+                        ),
+                      );
+                    }
                   },
                 ),
               );
