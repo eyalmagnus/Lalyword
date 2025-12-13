@@ -65,48 +65,9 @@ class FallbackData {
       {'english': 'remember', 'hebrew': '', 'syllables': ''}, 
       {'english': 'sandwich', 'hebrew': '', 'syllables': ''}, 
       {'english': 'telephone', 'hebrew': '', 'syllables': ''}
-    ],
-    'Elephants': [
-      {'english': 'elephants', 'hebrew': '', 'syllables': ''}, 
-      {'english': 'societies', 'hebrew': '', 'syllables': ''}, 
-      {'english': 'separate', 'hebrew': '', 'syllables': ''}, 
-      {'english': 'intelligent', 'hebrew': '', 'syllables': ''}, 
-      {'english': 'friendly', 'hebrew': '', 'syllables': ''},
-      {'english': 'human', 'hebrew': '', 'syllables': ''}, 
-      {'english': 'situation', 'hebrew': '', 'syllables': ''}, 
-      {'english': 'female', 'hebrew': '', 'syllables': ''}, 
-      {'english': 'deliver', 'hebrew': '', 'syllables': ''}, 
-      {'english': 'trunk', 'hebrew': 'חדק', 'syllables': ''},
-      {'english': 'babysitting', 'hebrew': '', 'syllables': ''}, 
-      {'english': 'leaves', 'hebrew': '', 'syllables': ''}, 
-      {'english': 'afterwards', 'hebrew': '', 'syllables': ''}, 
-      {'english': 'entertain', 'hebrew': '', 'syllables': ''}, 
-      {'english': 'themselves', 'hebrew': '', 'syllables': ''},
-      {'english': 'sucking', 'hebrew': '', 'syllables': ''}, 
-      {'english': 'behavior', 'hebrew': '', 'syllables': ''}
-    ],
+    ]
   };
 }
 
 
 
-//  {'english': 'adventure', 'hebrew': 'הרפתקה', 'syllables': 'ad.ven.ture'}, 
-//       {'english': 'beautiful', 'hebrew': 'יפה', 'syllables': 'beau.ti.ful'}, 
-//       {'english': 'celebrate', 'hebrew': 'לחגוג', 'syllables': 'cel.e.brate'}, 
-//       {'english': 'dangerous', 'hebrew': 'מסוכן', 'syllables': 'dan.ger.ous'}, 
-//       {'english': 'elephant', 'hebrew': 'פיל', 'syllables': 'el.e.phant'},
-//       {'english': 'festival', 'hebrew': 'פֶּסטִיָּל', 'syllables': 'fes.ti.val'}, 
-//       {'english': 'gratitude', 'hebrew': 'הכרת תודה', 'syllables': 'grat.i.tude'}, 
-//       {'english': 'happiness', 'hebrew': 'שמחה', 'syllables': 'hap.pi.ness'}, 
-//       {'english': 'important', 'hebrew': 'חשוב', 'syllables': 'im.por.tant'}, 
-//       {'english': 'journey', 'hebrew': 'מסע', 'syllables': 'jour.ney'},
-//       {'english': 'knowledge', 'hebrew': 'ידע', 'syllables': 'knowl.edge'}, 
-//       {'english': 'landscape', 'hebrew': 'נוף', 'syllables': 'land.scape'}, 
-//       {'english': 'mountain', 'hebrew': 'הר', 'syllables': 'moun.tain'}, 
-//       {'english': 'navigation', 'hebrew': 'ניווט', 'syllables': 'nav.i.ga.tion'}, 
-//       {'english': 'opposite', 'hebrew': 'מנוגד', 'syllables': 'op.po.site'},
-//       {'english': 'practice', 'hebrew': 'תרגיל', 'syllables': 'prac.tice'}, 
-//       {'english': 'question', 'hebrew': ' שאלה', 'syllables': 'ques.tion'}, 
-//       {'english': 'remember', 'hebrew': 'זכור', 'syllables': 're.mem.ber'}, 
-//       {'english': 'sandwich', 'hebrew': 'כריך', 'syllables': 'sand.wich'}, 
-//       {'english': 'telephone', 'hebrew': 'טלפון', 'syllables': 'tel.e.phone'}

@@ -12,28 +12,23 @@ final translationServiceProvider = Provider<TranslationService>((ref) => Transla
 
 // Settings State
 class SettingsState {
-  final String credentialsJson;
   final String sheetId;
   final bool isConfigured;
   final bool showSyllables;
 
   SettingsState({
-    this.credentialsJson = '',
     this.sheetId = '',
     this.isConfigured = false,
     this.showSyllables = false,
   });
 
   SettingsState copyWith({
-    String? credentialsJson,
     String? sheetId,
     bool? showSyllables,
   }) {
     return SettingsState(
-      credentialsJson: credentialsJson ?? this.credentialsJson,
       sheetId: sheetId ?? this.sheetId,
-      isConfigured: (credentialsJson ?? this.credentialsJson).isNotEmpty && 
-                    (sheetId ?? this.sheetId).isNotEmpty,
+      isConfigured: (sheetId ?? this.sheetId).isNotEmpty,
       showSyllables: showSyllables ?? this.showSyllables,
     );
   }
@@ -46,27 +41,22 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
 
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
-    final creds = prefs.getString(AppConstants.sheetCredentialsKey) ?? '';
     final sid = prefs.getString(AppConstants.sheetIdKey) ?? '';
     final showSyllables = prefs.getBool('show_syllables') ?? false;
     
     state = SettingsState(
-      credentialsJson: creds,
       sheetId: sid,
       showSyllables: showSyllables,
     );
   }
 
   Future<void> saveSettings({
-    required String credentialsJson,
     required String sheetId,
   }) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(AppConstants.sheetCredentialsKey, credentialsJson);
     await prefs.setString(AppConstants.sheetIdKey, sheetId);
 
     state = state.copyWith(
-      credentialsJson: credentialsJson,
       sheetId: sheetId,
     );
   }
@@ -89,11 +79,11 @@ final sheetInitProvider = FutureProvider<bool>((ref) async {
   
   final sheetService = ref.read(sheetServiceProvider);
   try {
-    await sheetService.init(settings.credentialsJson, settings.sheetId);
+    // Use simple public API method
+    await sheetService.initPublic(settings.sheetId);
     return true;
   } catch (e) {
     print('Sheet Init Error: $e');
-    // If it fails, strictly speaking we are not ready, but we return false
     return false;
   }
 });

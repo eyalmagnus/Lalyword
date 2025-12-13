@@ -11,20 +11,17 @@ class SettingsScreen extends ConsumerStatefulWidget {
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   final _formKey = GlobalKey<FormState>();
-  late TextEditingController _jsonController;
   late TextEditingController _sheetIdController;
 
   @override
   void initState() {
     super.initState();
     final settings = ref.read(settingsProvider);
-    _jsonController = TextEditingController(text: settings.credentialsJson);
     _sheetIdController = TextEditingController(text: settings.sheetId);
   }
 
   @override
   void dispose() {
-    _jsonController.dispose();
     _sheetIdController.dispose();
     super.dispose();
   }
@@ -32,7 +29,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Future<void> _save() async {
     if (_formKey.currentState!.validate()) {
       await ref.read(settingsProvider.notifier).saveSettings(
-        credentialsJson: _jsonController.text.trim(),
         sheetId: _sheetIdController.text.trim(),
       );
       
@@ -58,32 +54,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                'Google Service Account JSON',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: _jsonController,
-                maxLines: 8,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  hintText: '{ "type": "service_account", ... }',
-                  helperText: 'Paste the content of your .json key file',
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter JSON credentials';
-                  }
-                  if (!value.contains('"private_key"')) {
-                    return 'Invalid JSON format (missing private_key)';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 20),
-              
-              const Text(
-                'Spreadsheet ID',
+                'Google Sheet ID',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
@@ -92,7 +63,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 decoration: const InputDecoration(
                   border: OutlineInputBorder(),
                   hintText: '1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms',
-                  helperText: 'Found in the URL of your Google Sheet',
+                  helperText: 'Found in the URL of your public Google Sheet.\nMake sure the sheet is shared as "Anyone with the link can view".',
+                  helperMaxLines: 2,
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {

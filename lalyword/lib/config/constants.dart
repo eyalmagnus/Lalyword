@@ -5,6 +5,9 @@ class AppConstants {
   // Merriam-Webster Learner's Dictionary API key (hard-coded)
   static const String merriamWebsterApiKey = '9889d0a7-7134-422d-a084-89e0d918a363'; 
   
+  // Google Sheets API key for public sheet access (hard-coded)
+  static const String googleSheetsApiKey = 'AIzaSyC4siAHBjXV9LFzXfwxD2Bp1RKJq_IIqGk';
+  
   static const String sheetCredentialsKey = 'sheet_credentials';
   static const String sheetIdKey = 'sheet_id';
   static const String lastListKey = 'last_list';
