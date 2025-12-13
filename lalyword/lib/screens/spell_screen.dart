@@ -152,6 +152,7 @@ class SpellContent extends ConsumerStatefulWidget {
 class _SpellContentState extends ConsumerState<SpellContent> {
   final AudioPlayer _audioPlayer = AudioPlayer();
   bool _enriching = false;
+  bool _isFlipped = false;
 
   @override
   void initState() {
@@ -175,6 +176,7 @@ class _SpellContentState extends ConsumerState<SpellContent> {
       });
       setState(() {
         _enriching = false;
+        _isFlipped = false; // Reset flip state when word changes
       });
       _checkEnrichment();
     }
@@ -250,10 +252,18 @@ class _SpellContentState extends ConsumerState<SpellContent> {
     }
   }
 
+  void _handleHorizontalDrag(DragEndDetails details) {
+    // Swipe Left/Right -> Flip
+    setState(() {
+      _isFlipped = !_isFlipped;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onVerticalDragEnd: _handleVerticalDrag,
+      onHorizontalDragEnd: _handleHorizontalDrag,
       behavior: HitTestBehavior.translucent,
       child: Container(
         color: Theme.of(context).colorScheme.surface,
@@ -269,69 +279,89 @@ class _SpellContentState extends ConsumerState<SpellContent> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Hebrew translation on top
-                  Text(
-                    widget.word.hebrewWord ?? 'Translating...',
-                    style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                    textAlign: TextAlign.center,
-                    textDirection: TextDirection.rtl,
-                  ),
-                  
-                  const SizedBox(height: 32),
-                  
-                  // Sound button
-                  if (_enriching)
-                    const SizedBox(
-                      width: 20, height: 20, 
-                      child: CircularProgressIndicator(strokeWidth: 2)
-                    )
-                  else
-                    IconButton.filled(
-                      icon: const Icon(Icons.volume_up, size: 32),
-                      onPressed: (widget.word.audioUrl != null && widget.word.audioUrl!.isNotEmpty)
-                          ? _playSound
-                          : null,
-                      style: IconButton.styleFrom(padding: const EdgeInsets.all(16)),
-                    ),
-                  
-                  const SizedBox(height: 32),
-                  
-                  // Text input field
-                  TextField(
-                    controller: widget.textController,
-                    focusNode: widget.focusNode,
-                    autofocus: true,
-                    textInputAction: TextInputAction.done,
-                    keyboardType: TextInputType.text,
-                    textCapitalization: TextCapitalization.none,
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                    textAlign: TextAlign.center,
-                    decoration: InputDecoration(
-                      hintText: 'Type the word...',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
+                  if (_isFlipped) ...[
+                    // ENGLISH SIDE (flipped)
+                    Text(
+                      widget.word.englishWord,
+                      style: Theme.of(context).textTheme.displayMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
                       ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 16,
-                      ),
+                      textAlign: TextAlign.center,
                     ),
-                    inputFormatters: [
-                      FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z\s]')), // Only English letters and spaces
-                    ],
-                    onTap: () {
-                      widget.focusNode.requestFocus();
-                    },
-                  ),
+                    const SizedBox(height: 20),
+                    Text(
+                      '(Swipe to flip back)',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey),
+                    ),
+                  ] else ...[
+                    // HEBREW SIDE (default)
+                    Text(
+                      widget.word.hebrewWord ?? 'Translating...',
+                      style: Theme.of(context).textTheme.displayMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                      textDirection: TextDirection.rtl,
+                    ),
+                    
+                    const SizedBox(height: 32),
+                    
+                    // Sound button
+                    if (_enriching)
+                      const SizedBox(
+                        width: 20, height: 20, 
+                        child: CircularProgressIndicator(strokeWidth: 2)
+                      )
+                    else
+                      IconButton.filled(
+                        icon: const Icon(Icons.volume_up, size: 32),
+                        onPressed: (widget.word.audioUrl != null && widget.word.audioUrl!.isNotEmpty)
+                            ? _playSound
+                            : null,
+                        style: IconButton.styleFrom(padding: const EdgeInsets.all(16)),
+                      ),
+                    
+                    const SizedBox(height: 32),
+                    
+                    // Text input field
+                    TextField(
+                      controller: widget.textController,
+                      focusNode: widget.focusNode,
+                      autofocus: true,
+                      textInputAction: TextInputAction.done,
+                      keyboardType: TextInputType.text,
+                      textCapitalization: TextCapitalization.none,
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                      decoration: InputDecoration(
+                        hintText: 'Type the word...',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 16,
+                        ),
+                      ),
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z\s]')), // Only English letters and spaces
+                      ],
+                      onTap: () {
+                        widget.focusNode.requestFocus();
+                      },
+                    ),
+                  ],
                   
                   const Spacer(),
                   
                   const Text(
                     'Swipe Up/Down for Next/Prev',
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                  const Text(
+                    'Swipe Left/Right to Flip',
                     style: TextStyle(color: Colors.grey),
                   ),
                 ],
