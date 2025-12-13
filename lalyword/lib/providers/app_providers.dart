@@ -174,51 +174,140 @@ class SessionNotifier extends StateNotifier<List<WordItem>> {
   SessionNotifier() : super([]);
   
   int _currentIndex = 0;
+  Set<int> _knownWordIndices = {}; // Track indices of words marked as "known"
   
   void setWords(List<WordItem> words) {
     // Shuffle and reset
     final shuffled = List<WordItem>.from(words)..shuffle();
     _currentIndex = 0;
+    _knownWordIndices.clear(); // Clear all known states when reshuffling
     state = shuffled;
+    _moveToNextNonKnown(); // Move to first non-known word
   }
 
-  WordItem? get currentWord => state.isNotEmpty ? state[_currentIndex] : null;
+  WordItem? get currentWord {
+    if (state.isEmpty) return null;
+    // If current word is known, find next non-known
+    if (_knownWordIndices.contains(_currentIndex)) {
+      final nextIndex = _findNextNonKnownIndex(_currentIndex, forward: true);
+      if (nextIndex != null) {
+        _currentIndex = nextIndex;
+      }
+    }
+    return _knownWordIndices.contains(_currentIndex) ? null : state[_currentIndex];
+  }
+  
+  int? get currentWordIndex {
+    if (state.isEmpty) return null;
+    // If current word is known, find next non-known
+    if (_knownWordIndices.contains(_currentIndex)) {
+      final nextIndex = _findNextNonKnownIndex(_currentIndex, forward: true);
+      if (nextIndex != null) {
+        _currentIndex = nextIndex;
+      }
+    }
+    return _knownWordIndices.contains(_currentIndex) ? null : _currentIndex;
+  }
 
   void next() {
     if (state.isEmpty) return;
-    if (_currentIndex < state.length - 1) {
-      _currentIndex++;
-    } else {
-      // Loop or re-shuffle? "never neglecting a word" implies finishing the list.
-      // After finishing, maybe re-shuffle? 
-      // User says "Navigating up or down moves to the next word in the list."
-      // Let's just wrap around but maybe re-shuffle if we want endless?
-      // "never neglecting a word" -> usually means deck of cards. 
-      // I'll wrap around to 0 but maybe keeping same order? 
-      // "Random order" -> done at start. 
-      _currentIndex = 0; // simplistic wrap
+    // Start from the next position after current
+    final nextStart = (_currentIndex + 1) % state.length;
+    final nextIndex = _findNextNonKnownIndex(nextStart, forward: true);
+    if (nextIndex != null) {
+      _currentIndex = nextIndex;
+      state = [...state]; // Trigger notify
     }
-    state = [...state]; // Trigger notify
   }
 
   void prev() {
     if (state.isEmpty) return;
-    if (_currentIndex > 0) {
-      _currentIndex--;
-    } else {
-      _currentIndex = state.length - 1;
+    // Start from the previous position before current
+    final prevStart = (_currentIndex - 1 + state.length) % state.length;
+    final prevIndex = _findNextNonKnownIndex(prevStart, forward: false);
+    if (prevIndex != null) {
+      _currentIndex = prevIndex;
+      state = [...state]; // Trigger notify
     }
-    state = [...state];
   }
   
   void updateCurrentItem(WordItem enriched) {
     if (state.isEmpty) return;
-    state[_currentIndex] = enriched;
+    final effectiveIndex = currentWordIndex;
+    if (effectiveIndex != null) {
+      state[effectiveIndex] = enriched;
+      state = [...state]; // Notify
+    }
+  }
+  
+  void toggleWordKnown(WordItem word) {
+    // Find the index of this word
+    final wordIndex = state.indexWhere((w) => w.englishWord == word.englishWord);
+    if (wordIndex < 0) return;
+    
+    if (_knownWordIndices.contains(wordIndex)) {
+      _knownWordIndices.remove(wordIndex);
+    } else {
+      _knownWordIndices.add(wordIndex);
+      // If we just marked the current word as known, move to next
+      if (wordIndex == _currentIndex) {
+        _moveToNextNonKnown();
+      }
+    }
     state = [...state]; // Notify
+  }
+  
+  bool isWordKnown(WordItem word) {
+    final wordIndex = state.indexWhere((w) => w.englishWord == word.englishWord);
+    return wordIndex >= 0 && _knownWordIndices.contains(wordIndex);
+  }
+  
+  void _moveToNextNonKnown() {
+    final nextIndex = _findNextNonKnownIndex(_currentIndex, forward: true);
+    if (nextIndex != null) {
+      _currentIndex = nextIndex;
+    }
+  }
+  
+  // Find next/previous non-known word index, wrapping around
+  int? _findNextNonKnownIndex(int startIndex, {required bool forward}) {
+    if (state.isEmpty) return null;
+    if (_knownWordIndices.length >= state.length) return null; // All words are known
+    
+    int current = startIndex;
+    int checked = 0;
+    
+    while (checked < state.length) {
+      if (!_knownWordIndices.contains(current)) {
+        return current;
+      }
+      
+      if (forward) {
+        current = (current + 1) % state.length;
+      } else {
+        current = (current - 1 + state.length) % state.length;
+      }
+      checked++;
+    }
+    
+    return null; // Should not happen if we checked length correctly
   }
   
   int get currentIndex => _currentIndex;
   int get total => state.length;
+  int get visibleCount => state.length - _knownWordIndices.length; // Count of non-known words
+  
+  // Get the position of current word among visible (non-known) words (1-based)
+  int get currentVisiblePosition {
+    if (state.isEmpty || _knownWordIndices.contains(_currentIndex)) return 0;
+    int count = 1;
+    for (int i = 0; i < _currentIndex; i++) {
+      if (!_knownWordIndices.contains(i)) {
+        count++;
+      }
+    }
+    return count;
+  }
 }
 
 final sessionProvider = StateNotifierProvider<SessionNotifier, List<WordItem>>((ref) {

@@ -59,11 +59,33 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Word ${notifier.currentIndex + 1} / ${notifier.total}'),
+        title: Text('Word ${notifier.currentVisiblePosition} / ${notifier.visibleCount}'),
         actions: [
           IconButton(
              icon: const Icon(Icons.shuffle),
-             onPressed: () => notifier.setWords(session), // Reshuffles
+             onPressed: () async {
+               // Show confirmation dialog
+               final confirmed = await showDialog<bool>(
+                 context: context,
+                 builder: (context) => AlertDialog(
+                   title: const Text('Reshuffle words?'),
+                   content: const Text('Are you sure? This will reset all "I know this word" checkboxes and reshuffle the order.'),
+                   actions: [
+                     TextButton(
+                       onPressed: () => Navigator.of(context).pop(false),
+                       child: const Text('Cancel'),
+                     ),
+                     TextButton(
+                       onPressed: () => Navigator.of(context).pop(true),
+                       child: const Text('Yes'),
+                     ),
+                   ],
+                 ),
+               );
+               if (confirmed == true && mounted) {
+                 notifier.setWords(session); // Reshuffles and clears known states
+               }
+             },
           )
         ],
       ),
@@ -72,6 +94,8 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen> {
         onNext: notifier.next,
         onPrev: notifier.prev,
         onEnrich: (enriched) => notifier.updateCurrentItem(enriched),
+        isKnown: notifier.isWordKnown(currentWord),
+        onToggleKnown: () => notifier.toggleWordKnown(currentWord),
       ),
     );
   }
@@ -82,6 +106,8 @@ class FlashcardContent extends ConsumerStatefulWidget {
   final VoidCallback onNext;
   final VoidCallback onPrev;
   final Function(WordItem) onEnrich;
+  final bool isKnown;
+  final VoidCallback? onToggleKnown;
 
   const FlashcardContent({
     super.key,
@@ -89,6 +115,8 @@ class FlashcardContent extends ConsumerStatefulWidget {
     required this.onNext,
     required this.onPrev,
     required this.onEnrich,
+    required this.isKnown,
+    this.onToggleKnown,
   });
 
   @override
@@ -390,6 +418,23 @@ class _FlashcardContentState extends ConsumerState<FlashcardContent> {
                   ],
                   
                   const Spacer(),
+                  
+                  // "I know this word" checkbox
+                  if (widget.onToggleKnown != null)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 16.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Checkbox(
+                            value: widget.isKnown,
+                            onChanged: (_) => widget.onToggleKnown!(),
+                          ),
+                          const Text('I know this word'),
+                        ],
+                      ),
+                    ),
+                  
                   const Text('Swipe Up/Down for Next/Prev', style: TextStyle(color: Colors.grey)),
                   const Text('Swipe Left/Right to Flip', style: TextStyle(color: Colors.grey)),
                 ],
