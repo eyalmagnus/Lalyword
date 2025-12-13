@@ -187,47 +187,49 @@ class SessionNotifier extends StateNotifier<List<WordItem>> {
 
   WordItem? get currentWord {
     if (state.isEmpty) return null;
-    // If current word is known, find next non-known
-    if (_knownWordIndices.contains(_currentIndex)) {
-      final nextIndex = _findNextNonKnownIndex(_currentIndex, forward: true);
-      if (nextIndex != null) {
-        _currentIndex = nextIndex;
-      }
-    }
-    return _knownWordIndices.contains(_currentIndex) ? null : state[_currentIndex];
+    // Always return the word at current index, even if it's marked as known
+    // Navigation will handle skipping known words, but we keep current word visible
+    return state[_currentIndex];
   }
   
   int? get currentWordIndex {
     if (state.isEmpty) return null;
-    // If current word is known, find next non-known
-    if (_knownWordIndices.contains(_currentIndex)) {
-      final nextIndex = _findNextNonKnownIndex(_currentIndex, forward: true);
-      if (nextIndex != null) {
-        _currentIndex = nextIndex;
-      }
-    }
-    return _knownWordIndices.contains(_currentIndex) ? null : _currentIndex;
+    return _currentIndex;
   }
 
   void next() {
     if (state.isEmpty) return;
-    // Start from the next position after current
+    // Start from the next position after current, skip known words
     final nextStart = (_currentIndex + 1) % state.length;
     final nextIndex = _findNextNonKnownIndex(nextStart, forward: true);
     if (nextIndex != null) {
       _currentIndex = nextIndex;
       state = [...state]; // Trigger notify
+    } else if (_knownWordIndices.length < state.length) {
+      // If we couldn't find next non-known but there are still some, try from beginning
+      final fromStart = _findNextNonKnownIndex(0, forward: true);
+      if (fromStart != null) {
+        _currentIndex = fromStart;
+        state = [...state];
+      }
     }
   }
 
   void prev() {
     if (state.isEmpty) return;
-    // Start from the previous position before current
+    // Start from the previous position before current, skip known words
     final prevStart = (_currentIndex - 1 + state.length) % state.length;
     final prevIndex = _findNextNonKnownIndex(prevStart, forward: false);
     if (prevIndex != null) {
       _currentIndex = prevIndex;
       state = [...state]; // Trigger notify
+    } else if (_knownWordIndices.length < state.length) {
+      // If we couldn't find prev non-known but there are still some, try from end
+      final fromEnd = _findNextNonKnownIndex(state.length - 1, forward: false);
+      if (fromEnd != null) {
+        _currentIndex = fromEnd;
+        state = [...state];
+      }
     }
   }
   
@@ -249,10 +251,7 @@ class SessionNotifier extends StateNotifier<List<WordItem>> {
       _knownWordIndices.remove(wordIndex);
     } else {
       _knownWordIndices.add(wordIndex);
-      // If we just marked the current word as known, move to next
-      if (wordIndex == _currentIndex) {
-        _moveToNextNonKnown();
-      }
+      // Don't navigate away - keep the word visible so user can uncheck or navigate manually
     }
     state = [...state]; // Notify
   }

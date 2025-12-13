@@ -57,9 +57,14 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen> {
       );
     }
 
+    final isCurrentKnown = notifier.isWordKnown(currentWord);
+    final titleText = isCurrentKnown 
+        ? 'Word (checked) / ${notifier.visibleCount}'
+        : 'Word ${notifier.currentVisiblePosition} / ${notifier.visibleCount}';
+    
     return Scaffold(
       appBar: AppBar(
-        title: Text('Word ${notifier.currentVisiblePosition} / ${notifier.visibleCount}'),
+        title: Text(titleText),
         actions: [
           IconButton(
              icon: const Icon(Icons.shuffle),
@@ -429,8 +434,22 @@ class _FlashcardContentState extends ConsumerState<FlashcardContent> {
                           Checkbox(
                             value: widget.isKnown,
                             onChanged: (_) => widget.onToggleKnown!(),
+                            checkColor: Colors.white,
+                            fillColor: widget.isKnown 
+                                ? WidgetStateProperty.all(Colors.green)
+                                : WidgetStateProperty.all(null),
                           ),
-                          const Text('I know this word'),
+                          Text(
+                            'I know this word',
+                            style: widget.isKnown
+                                ? const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)
+                                : null,
+                          ),
+                          if (widget.isKnown)
+                            const Padding(
+                              padding: EdgeInsets.only(left: 8.0),
+                              child: Icon(Icons.check_circle, color: Colors.green, size: 20),
+                            ),
                         ],
                       ),
                     ),
