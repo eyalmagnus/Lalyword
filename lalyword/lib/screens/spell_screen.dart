@@ -78,7 +78,6 @@ class _SpellScreenState extends ConsumerState<SpellScreen> {
           onPressed: () async {
             // Skip warning if no words are marked as known
             final hasKnown = notifier.hasKnownWords;
-            print('Back button: hasKnownWords=$hasKnown, knownIndices count=${notifier.visibleCount < notifier.total ? notifier.total - notifier.visibleCount : 0}');
             if (!hasKnown) {
               if (mounted) {
                 Navigator.of(context).pop();
@@ -115,7 +114,6 @@ class _SpellScreenState extends ConsumerState<SpellScreen> {
             onPressed: () async {
               // Skip warning if no words are marked as known
               final hasKnown = notifier.hasKnownWords;
-              print('Reshuffle button: hasKnownWords=$hasKnown, knownIndices count=${notifier.visibleCount < notifier.total ? notifier.total - notifier.visibleCount : 0}');
               if (!hasKnown) {
                 if (mounted) {
                   notifier.setWords(session);
@@ -373,8 +371,6 @@ class _SpellContentState extends ConsumerState<SpellContent> {
     final currentCount = storedWord.timesSpellChecked;
     final newCount = currentCount + 1;
     
-    print('Tracking spell check for ${currentWord.englishWord}: $currentCount -> $newCount');
-    
     // Create updated word with incremented count, preserving display data from current word
     // This ensures Hebrew, audio, syllables etc. don't disappear
     final updated = currentWord.copyWith(
@@ -386,7 +382,6 @@ class _SpellContentState extends ConsumerState<SpellContent> {
       timesHebrewShown: storedWord.timesHebrewShown > currentWord.timesHebrewShown ? storedWord.timesHebrewShown : currentWord.timesHebrewShown,
     );
     await storageService.updateWordActivity(updated);
-    print('Saved spell check count: ${updated.timesSpellChecked}');
     
     // Also update in session - this preserves all display data (Hebrew, audio, etc.)
     widget.onEnrich(updated);

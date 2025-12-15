@@ -47,6 +47,7 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
     
     state = SettingsState(
       sheetId: sid,
+      isConfigured: sid.isNotEmpty,
       showSyllables: showSyllables,
     );
   }
@@ -303,9 +304,7 @@ class SessionNotifier extends StateNotifier<List<WordItem>> {
   
   // Check if any words are marked as known
   bool get hasKnownWords {
-    final result = _knownWordIndices.isNotEmpty;
-    print('hasKnownWords getter: _knownWordIndices.length=${_knownWordIndices.length}, result=$result');
-    return result;
+    return _knownWordIndices.isNotEmpty;
   }
   
   // Get the position of current word among visible (non-known) words (1-based)
