@@ -42,12 +42,13 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
 
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
-    final sid = prefs.getString(AppConstants.sheetIdKey) ?? AppConstants.defaultSheetId;
+    final savedSheetId = prefs.getString(AppConstants.sheetIdKey);
+    final sid = savedSheetId ?? AppConstants.defaultSheetId;
     final showSyllables = prefs.getBool('show_syllables') ?? false;
     
     state = SettingsState(
       sheetId: sid,
-      isConfigured: sid.isNotEmpty,
+      isConfigured: savedSheetId != null && savedSheetId.isNotEmpty,
       showSyllables: showSyllables,
     );
   }
