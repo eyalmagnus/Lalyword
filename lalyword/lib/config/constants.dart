@@ -11,4 +11,7 @@ class AppConstants {
   static const String sheetCredentialsKey = 'sheet_credentials';
   static const String sheetIdKey = 'sheet_id';
   static const String lastListKey = 'last_list';
+  
+  // Default Google Sheet ID
+  static const String defaultSheetId = '1ih-k_KL33t7AU_h6BChr9XChjqoGiT9SVfuL04nS1JA';
 }

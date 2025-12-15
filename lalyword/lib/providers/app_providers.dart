@@ -18,7 +18,7 @@ class SettingsState {
   final bool showSyllables;
 
   SettingsState({
-    this.sheetId = '',
+    this.sheetId = AppConstants.defaultSheetId,
     this.isConfigured = false,
     this.showSyllables = false,
   });
@@ -42,7 +42,7 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
 
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
-    final sid = prefs.getString(AppConstants.sheetIdKey) ?? '';
+    final sid = prefs.getString(AppConstants.sheetIdKey) ?? AppConstants.defaultSheetId;
     final showSyllables = prefs.getBool('show_syllables') ?? false;
     
     state = SettingsState(
@@ -300,6 +300,13 @@ class SessionNotifier extends StateNotifier<List<WordItem>> {
   int get currentIndex => _currentIndex;
   int get total => state.length;
   int get visibleCount => state.length - _knownWordIndices.length; // Count of non-known words
+  
+  // Check if any words are marked as known
+  bool get hasKnownWords {
+    final result = _knownWordIndices.isNotEmpty;
+    print('hasKnownWords getter: _knownWordIndices.length=${_knownWordIndices.length}, result=$result');
+    return result;
+  }
   
   // Get the position of current word among visible (non-known) words (1-based)
   int get currentVisiblePosition {

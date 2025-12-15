@@ -67,6 +67,15 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () async {
+            // Skip warning if no words are marked as known
+            final hasKnown = notifier.hasKnownWords;
+            if (!hasKnown) {
+              if (mounted) {
+                Navigator.of(context).pop();
+              }
+              return;
+            }
+            
             final confirmed = await showDialog<bool>(
               context: context,
               builder: (context) => AlertDialog(
@@ -94,6 +103,15 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen> {
           IconButton(
              icon: const Icon(Icons.shuffle),
              onPressed: () async {
+               // Skip warning if no words are marked as known
+               final hasKnown = notifier.hasKnownWords;
+               if (!hasKnown) {
+                 if (mounted) {
+                   notifier.setWords(session); // Reshuffles and clears known states
+                 }
+                 return;
+               }
+               
                // Show confirmation dialog
                final confirmed = await showDialog<bool>(
                  context: context,

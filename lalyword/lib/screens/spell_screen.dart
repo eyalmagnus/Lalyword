@@ -76,6 +76,16 @@ class _SpellScreenState extends ConsumerState<SpellScreen> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () async {
+            // Skip warning if no words are marked as known
+            final hasKnown = notifier.hasKnownWords;
+            print('Back button: hasKnownWords=$hasKnown, knownIndices count=${notifier.visibleCount < notifier.total ? notifier.total - notifier.visibleCount : 0}');
+            if (!hasKnown) {
+              if (mounted) {
+                Navigator.of(context).pop();
+              }
+              return;
+            }
+            
             final confirmed = await showDialog<bool>(
               context: context,
               builder: (context) => AlertDialog(
@@ -103,6 +113,20 @@ class _SpellScreenState extends ConsumerState<SpellScreen> {
           IconButton(
             icon: const Icon(Icons.shuffle),
             onPressed: () async {
+              // Skip warning if no words are marked as known
+              final hasKnown = notifier.hasKnownWords;
+              print('Reshuffle button: hasKnownWords=$hasKnown, knownIndices count=${notifier.visibleCount < notifier.total ? notifier.total - notifier.visibleCount : 0}');
+              if (!hasKnown) {
+                if (mounted) {
+                  notifier.setWords(session);
+                  _textController.clear();
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    _focusNode.requestFocus();
+                  });
+                }
+                return;
+              }
+              
               final confirmed = await showDialog<bool>(
                 context: context,
                 builder: (context) => AlertDialog(

@@ -63,7 +63,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 controller: _sheetIdController,
                 decoration: const InputDecoration(
                   border: OutlineInputBorder(),
-                  hintText: '1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms',
+                  hintText: '1ih-k_KL33t7AU_h6BChr9XChjqoGiT9SVfuL04nS1JA',
                   helperText: 'Found in the URL of your public Google Sheet.\nMake sure the sheet is shared as "Anyone with the link can view".',
                   helperMaxLines: 2,
                 ),
