@@ -375,12 +375,20 @@ class _SpellContentState extends ConsumerState<SpellContent> {
     
     print('Tracking spell check for ${currentWord.englishWord}: $currentCount -> $newCount');
     
-    // Create updated word with incremented count, preserving all other data from stored word
-    final updated = storedWord.copyWith(timesSpellChecked: newCount);
+    // Create updated word with incremented count, preserving display data from current word
+    // This ensures Hebrew, audio, syllables etc. don't disappear
+    final updated = currentWord.copyWith(
+      timesSpellChecked: newCount,
+      // Preserve other activity counts from stored word if they're higher
+      timesShown: storedWord.timesShown > currentWord.timesShown ? storedWord.timesShown : currentWord.timesShown,
+      timesHeard: storedWord.timesHeard > currentWord.timesHeard ? storedWord.timesHeard : currentWord.timesHeard,
+      timesSyllablesShown: storedWord.timesSyllablesShown > currentWord.timesSyllablesShown ? storedWord.timesSyllablesShown : currentWord.timesSyllablesShown,
+      timesHebrewShown: storedWord.timesHebrewShown > currentWord.timesHebrewShown ? storedWord.timesHebrewShown : currentWord.timesHebrewShown,
+    );
     await storageService.updateWordActivity(updated);
     print('Saved spell check count: ${updated.timesSpellChecked}');
     
-    // Also update in session
+    // Also update in session - this preserves all display data (Hebrew, audio, etc.)
     widget.onEnrich(updated);
   }
 
@@ -477,19 +485,24 @@ class _SpellContentState extends ConsumerState<SpellContent> {
       behavior: HitTestBehavior.translucent,
       child: Container(
         color: Theme.of(context).colorScheme.surface,
-        alignment: Alignment.center,
-        padding: const EdgeInsets.all(24),
-        child: AspectRatio(
-          aspectRatio: 0.7,
-          child: Card(
-            elevation: 8,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-            child: Padding(
-              padding: const EdgeInsets.all(32.0),
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            // Use most of the screen height, leaving space for app bar and some padding
+            final cardHeight = constraints.maxHeight * 0.85;
+            return Center(
+              child: SizedBox(
+                height: cardHeight,
+                width: double.infinity,
+                child: Card(
+                  elevation: 8,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 24.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
                   if (_isFlipped) ...[
                     // ENGLISH SIDE (flipped)
                     Text(
@@ -499,7 +512,7 @@ class _SpellContentState extends ConsumerState<SpellContent> {
                       ),
                       textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 16),
                     Text(
                       '(Swipe to flip back)',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey),
@@ -508,14 +521,21 @@ class _SpellContentState extends ConsumerState<SpellContent> {
                     // HEBREW SIDE (default)
                     Text(
                       widget.word.hebrewWord ?? 'Translating...',
-                      style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: widget.word.hebrewWord == null || widget.word.hebrewWord!.isEmpty
+                          ? Theme.of(context).textTheme.bodyLarge?.copyWith(
+                              fontWeight: FontWeight.normal,
+                              color: Colors.grey,
+                            )
+                          : Theme.of(context).textTheme.displayMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
                       textAlign: TextAlign.center,
-                      textDirection: TextDirection.rtl,
+                      textDirection: widget.word.hebrewWord != null && widget.word.hebrewWord!.isNotEmpty
+                          ? TextDirection.rtl
+                          : TextDirection.ltr,
                     ),
                     
-                    SizedBox(height: _isCorrect == false ? 24 : 32),
+                    SizedBox(height: _isCorrect == false ? 20 : 28),
                     
                     // Sound button
                     if (_enriching)
@@ -532,7 +552,7 @@ class _SpellContentState extends ConsumerState<SpellContent> {
                         style: IconButton.styleFrom(padding: const EdgeInsets.all(16)),
                       ),
                     
-                    SizedBox(height: _isCorrect == false ? 24 : 32),
+                    SizedBox(height: _isCorrect == false ? 20 : 28),
                     
                     // Text input field
                     TextField(
@@ -637,7 +657,7 @@ class _SpellContentState extends ConsumerState<SpellContent> {
                         ),
                       ),
                     
-                    SizedBox(height: _isCorrect == false ? 16 : 24),
+                    SizedBox(height: _isCorrect == false ? 12 : 20),
                     
                     // Check button
                     if (!_isFlipped)
@@ -657,7 +677,7 @@ class _SpellContentState extends ConsumerState<SpellContent> {
                     // "I know this word" checkbox
                     if (!_isFlipped)
                       Padding(
-                        padding: const EdgeInsets.only(top: 16.0),
+                        padding: const EdgeInsets.only(top: 12.0),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
@@ -684,22 +704,23 @@ class _SpellContentState extends ConsumerState<SpellContent> {
                         ),
                       ),
                   ],
-                  
-                  const SizedBox(height: 16),
-                  
-                  const Text(
-                    'Swipe Up/Down for Next/Prev',
-                    style: TextStyle(color: Colors.grey),
+                        const SizedBox(height: 12),
+                        
+                        const Text(
+                          'Swipe Up/Down for Next/Prev',
+                          style: TextStyle(color: Colors.grey, fontSize: 12),
+                        ),
+                        const Text(
+                          'Swipe Left/Right to Flip',
+                          style: TextStyle(color: Colors.grey, fontSize: 12),
+                        ),
+                      ],
+                    ),
                   ),
-                  const Text(
-                    'Swipe Left/Right to Flip',
-                    style: TextStyle(color: Colors.grey),
-                  ),
-                  ],
                 ),
               ),
-            ),
-          ),
+            );
+          },
         ),
       ),
     );

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'screens/list_selection_screen.dart';
+import 'screens/splash_screen.dart';
 
 void main() {
   runApp(
@@ -28,7 +28,7 @@ class LalyApp extends ConsumerWidget {
         useMaterial3: true,
         fontFamily: 'Roboto', 
       ),
-      home: const ListSelectionScreen(),
+      home: const SplashScreen(),
     );
   }
 }
