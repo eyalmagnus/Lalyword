@@ -291,36 +291,62 @@ class DictionaryService {
         final List<dynamic> data = json.decode(response.body);
         print('Merriam-Webster response for "$word": $data');
         // Response format: array of entries with hwi.hw containing syllables with * delimiter
-        if (data.isNotEmpty && data[0] is Map) {
-          final entry = data[0] as Map<String, dynamic>;
+        if (data.isNotEmpty) {
+          // Get first entry for audio extraction and ID
+          final firstEntry = data[0] is Map ? data[0] as Map<String, dynamic> : null;
           
-          // Check the actual word ID returned by Merriam-Webster
-          final meta = entry['meta'] as Map<String, dynamic>?;
-          if (meta != null && meta['id'] != null) {
-            var rawId = meta['id'].toString();
-            // Strip homograph indicators like ":1", ":2", etc. from the ID
-            // These are just indicators to distinguish multiple entries, not part of the word
-            final colonIndex = rawId.indexOf(':');
-            actualWordId = colonIndex > 0 ? rawId.substring(0, colonIndex) : rawId;
-            print('Merriam-Webster meta.id for searched "$word": "$rawId" (cleaned to "$actualWordId")');
+          // Check the actual word ID returned by Merriam-Webster (use first entry for ID)
+          if (firstEntry != null) {
+            final meta = firstEntry['meta'] as Map<String, dynamic>?;
+            if (meta != null && meta['id'] != null) {
+              var rawId = meta['id'].toString();
+              // Strip homograph indicators like ":1", ":2", etc. from the ID
+              // These are just indicators to distinguish multiple entries, not part of the word
+              final colonIndex = rawId.indexOf(':');
+              actualWordId = colonIndex > 0 ? rawId.substring(0, colonIndex) : rawId;
+              print('Merriam-Webster meta.id for searched "$word": "$rawId" (cleaned to "$actualWordId")');
+            }
           }
           
-          final hwi = entry['hwi'] as Map<String, dynamic>?;
-          if (hwi != null && hwi['hw'] != null) {
-            // hw contains syllables separated by *, e.g., "beau*ti*ful"
-            final hw = hwi['hw'].toString();
-            syllables = hw.replaceAll('*', '.');
-            print('Parsed syllables for "$word": $syllables');
-          } else {
-            print('No hwi.hw found in response for "$word"');
+          // Try each entry until we find valid syllables
+          bool foundValidSyllables = false;
+          for (var entryData in data) {
+            if (entryData is! Map) continue;
+            final entry = entryData as Map<String, dynamic>;
+            
+            // Try to extract syllables from this entry
+            final hwi = entry['hwi'] as Map<String, dynamic>?;
+            if (hwi != null && hwi['hw'] != null && !foundValidSyllables) {
+              // hw contains syllables separated by *, e.g., "beau*ti*ful"
+              final hw = hwi['hw'].toString();
+              final extractedSyllables = hw.replaceAll('*', '.');
+              
+              // Validate syllables: remove dots and compare with original word (case-insensitive)
+              // This ensures we don't use malformed syllables like "genegal" for "general"
+              final syllablesWithoutDots = extractedSyllables.replaceAll('.', '').toLowerCase();
+              final wordLower = word.toLowerCase();
+              
+              if (syllablesWithoutDots == wordLower) {
+                syllables = extractedSyllables;
+                foundValidSyllables = true;
+                print('Parsed syllables for "$word": $syllables');
+                break; // Found valid syllables, stop searching
+              } else {
+                print('Skipping invalid syllables "$extractedSyllables" for "$word" (syllables without dots: "$syllablesWithoutDots" != "$wordLower")');
+              }
+            }
+          }
+          
+          if (!foundValidSyllables) {
+            print('No valid hwi.hw found in any entry for "$word"');
           }
           
           // Try to extract audio from Merriam-Webster if we don't have it from FreeDictionaryAPI
-          if (audioUrl == null || audioUrl.isEmpty) {
+          if ((audioUrl == null || audioUrl.isEmpty) && firstEntry != null) {
             print('Attempting to extract audio from Merriam-Webster for "$word"');
             
             // Look for audio in vrs (variants) array
-            final vrs = entry['vrs'] as List<dynamic>?;
+            final vrs = firstEntry['vrs'] as List<dynamic>?;
             if (vrs != null) {
               for (var variant in vrs) {
                 if (variant is Map<String, dynamic>) {
@@ -351,22 +377,25 @@ class DictionaryService {
               }
             }
             
-            // If still no audio, try hwi.prs (headword pronunciations)
-            if ((audioUrl == null || audioUrl.isEmpty) && hwi != null) {
-              final hwiPrs = hwi['prs'] as List<dynamic>?;
-              if (hwiPrs != null) {
-                for (var pr in hwiPrs) {
-                  if (pr is Map<String, dynamic>) {
-                    final sound = pr['sound'] as Map<String, dynamic>?;
-                    if (sound != null) {
-                      final audioId = sound['audio'];
-                      if (audioId != null && audioId.toString().isNotEmpty) {
-                        final audioIdStr = audioId.toString();
-                        if (audioIdStr.isNotEmpty) {
-                          final firstLetter = audioIdStr[0].toLowerCase();
-                          audioUrl = 'https://media.merriam-webster.com/audio/prons/en/us/mp3/$firstLetter/$audioIdStr.mp3';
-                          print('Constructed Merriam-Webster audio URL from hwi.prs for "$word": "$audioUrl"');
-                          break;
+            // If still no audio, try hwi.prs (headword pronunciations) from first entry
+            if (audioUrl == null || audioUrl.isEmpty) {
+              final firstHwi = firstEntry['hwi'] as Map<String, dynamic>?;
+              if (firstHwi != null) {
+                final hwiPrs = firstHwi['prs'] as List<dynamic>?;
+                if (hwiPrs != null) {
+                  for (var pr in hwiPrs) {
+                    if (pr is Map<String, dynamic>) {
+                      final sound = pr['sound'] as Map<String, dynamic>?;
+                      if (sound != null) {
+                        final audioId = sound['audio'];
+                        if (audioId != null && audioId.toString().isNotEmpty) {
+                          final audioIdStr = audioId.toString();
+                          if (audioIdStr.isNotEmpty) {
+                            final firstLetter = audioIdStr[0].toLowerCase();
+                            audioUrl = 'https://media.merriam-webster.com/audio/prons/en/us/mp3/$firstLetter/$audioIdStr.mp3';
+                            print('Constructed Merriam-Webster audio URL from hwi.prs for "$word": "$audioUrl"');
+                            break;
+                          }
                         }
                       }
                     }

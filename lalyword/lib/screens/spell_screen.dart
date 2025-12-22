@@ -300,6 +300,8 @@ class _SpellContentState extends ConsumerState<SpellContent> {
     if (widget.word.audioUrl != null && widget.word.audioUrl!.isNotEmpty) {
       try {
         await _audioPlayer.play(UrlSource(widget.word.audioUrl!));
+        // Track that sound was heard
+        _trackSoundHeard();
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error playing audio: $e')),
@@ -351,6 +353,42 @@ class _SpellContentState extends ConsumerState<SpellContent> {
     _trackSpellChecked();
   }
   
+  Future<void> _trackSoundHeard() async {
+    // Get the current word from the session
+    final notifier = ref.read(sessionProvider.notifier);
+    final currentWord = notifier.currentWord;
+    
+    if (currentWord == null) return;
+    
+    final storageService = ref.read(storageServiceProvider);
+    
+    // Load the latest word from storage to ensure we have the most recent activity data
+    final allWords = await storageService.getAllWordsWithActivity();
+    final storedWord = allWords.firstWhere(
+      (w) => w.englishWord.toLowerCase() == currentWord.englishWord.toLowerCase(),
+      orElse: () => currentWord,
+    );
+    
+    // Use the stored word's count if available, otherwise use current word's count
+    final currentCount = storedWord.timesHeard;
+    final newCount = currentCount + 1;
+    
+    // Create updated word with incremented count, preserving display data from current word
+    // This ensures Hebrew, audio, syllables etc. don't disappear
+    final updated = currentWord.copyWith(
+      timesHeard: newCount,
+      // Preserve other activity counts from stored word if they're higher
+      timesShown: storedWord.timesShown > currentWord.timesShown ? storedWord.timesShown : currentWord.timesShown,
+      timesSpellChecked: storedWord.timesSpellChecked > currentWord.timesSpellChecked ? storedWord.timesSpellChecked : currentWord.timesSpellChecked,
+      timesSyllablesShown: storedWord.timesSyllablesShown > currentWord.timesSyllablesShown ? storedWord.timesSyllablesShown : currentWord.timesSyllablesShown,
+      timesHebrewShown: storedWord.timesHebrewShown > currentWord.timesHebrewShown ? storedWord.timesHebrewShown : currentWord.timesHebrewShown,
+    );
+    await storageService.updateWordActivity(updated);
+    
+    // Also update in session - this preserves all display data (Hebrew, audio, etc.)
+    widget.onEnrich(updated);
+  }
+
   Future<void> _trackSpellChecked() async {
     // Get the current word from the session
     final notifier = ref.read(sessionProvider.notifier);

@@ -268,16 +268,13 @@ class _FlashcardContentState extends ConsumerState<FlashcardContent> {
         _trackSoundHeard();
         
         // Toggle syllables on when audio is played (if syllables are available)
+        // Note: Auto-toggle does NOT count as syllables shown - only manual eye button presses count
         final hasSyllables = widget.word.syllables != null && 
                             widget.word.syllables!.isNotEmpty;
         if (hasSyllables && !_showSyllablesLocal) {
           setState(() {
             _showSyllablesLocal = true;
-            // Track syllables shown when toggled on via audio playback
-            if (!_syllablesTrackedForCurrentWord) {
-              _trackSyllablesShown();
-              _syllablesTrackedForCurrentWord = true;
-            }
+            // Do NOT track syllables shown here - only manual eye button presses should count
           });
         }
       } catch (e) {
