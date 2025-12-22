@@ -1,0 +1,45 @@
+name: Build Windows Executable
+
+on:
+  workflow_dispatch:  # Manual trigger from GitHub Actions tab
+  push:
+    tags:
+      - 'v*'  # Trigger on version tags like v1.0.0
+
+jobs:
+  build:
+    runs-on: windows-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.5'
+          channel: 'stable'
+      
+      - name: Enable Windows Desktop
+        run: flutter config --enable-windows-desktop
+      
+      - name: Get Dependencies
+        run: flutter pub get
+      
+      - name: Build Windows Release
+        run: flutter build windows --release
+      
+      - name: Create ZIP Archive
+        shell: powershell
+        run: |
+          Compress-Archive -Path build\windows\x64\runner\Release\* -DestinationPath lalyword-windows.zip -Force
+      
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-executable
+          path: |
+            build/windows/x64/runner/Release/
+            lalyword-windows.zip
+          retention-days: 30
+

@@ -266,6 +266,20 @@ class _FlashcardContentState extends ConsumerState<FlashcardContent> {
         await _audioPlayer.play(UrlSource(widget.word.audioUrl!));
         // Track that sound was heard
         _trackSoundHeard();
+        
+        // Toggle syllables on when audio is played (if syllables are available)
+        final hasSyllables = widget.word.syllables != null && 
+                            widget.word.syllables!.isNotEmpty;
+        if (hasSyllables && !_showSyllablesLocal) {
+          setState(() {
+            _showSyllablesLocal = true;
+            // Track syllables shown when toggled on via audio playback
+            if (!_syllablesTrackedForCurrentWord) {
+              _trackSyllablesShown();
+              _syllablesTrackedForCurrentWord = true;
+            }
+          });
+        }
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
            SnackBar(content: Text('Error playing audio: $e')),
@@ -375,9 +389,18 @@ class _FlashcardContentState extends ConsumerState<FlashcardContent> {
                          final hasSyllables = widget.word.syllables != null && 
                                             widget.word.syllables!.isNotEmpty;
                          
+                         // Format word: if it starts with "to ", show as "(to) word"
+                         // If it ends with " to", show as "word {to}"
+                         String formattedWord = widget.word.englishWord;
+                         if (formattedWord.toLowerCase().startsWith('to ') && formattedWord.length > 3) {
+                           formattedWord = '(to) ${formattedWord.substring(3)}';
+                         } else if (formattedWord.toLowerCase().endsWith(' to') && formattedWord.length > 4) {
+                           formattedWord = '${formattedWord.substring(0, formattedWord.length - 3)} {to}';
+                         }
+                         
                          var displayText = (_showSyllablesLocal && hasSyllables) 
                              ? widget.word.syllables! 
-                             : widget.word.englishWord;
+                             : formattedWord;
 
                          // Single syllable check: if we are showing syllables, and there are no dots inside, add one at end.
                          if (_showSyllablesLocal && hasSyllables && !displayText.contains('.')) {
@@ -457,14 +480,30 @@ class _FlashcardContentState extends ConsumerState<FlashcardContent> {
                         style: IconButton.styleFrom(padding: const EdgeInsets.all(16)),
                       ),
                       
-                      if (widget.word.phonetic != null)
-                         Padding(
-                           padding: const EdgeInsets.only(top: 16.0),
-                           child: Text(
-                             widget.word.phonetic!,
-                             style: const TextStyle(color: Colors.grey, fontStyle: FontStyle.italic),
-                           ),
-                         ),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 16.0),
+                        child: Column(
+                          children: [
+                            if (widget.word.phonetic != null)
+                              Text(
+                                widget.word.phonetic!,
+                                style: const TextStyle(color: Colors.grey, fontStyle: FontStyle.italic),
+                              ),
+                            if (widget.word.originalWord != null)
+                              Padding(
+                                padding: EdgeInsets.only(top: widget.word.phonetic != null ? 8.0 : 0.0),
+                                child: Text(
+                                  widget.word.originalWord!.toLowerCase().startsWith('to ')
+                                      ? '(to) ${widget.word.originalWord!.substring(3)}'
+                                      : widget.word.originalWord!.toLowerCase().endsWith(' to') && widget.word.originalWord!.length > 4
+                                          ? '${widget.word.originalWord!.substring(0, widget.word.originalWord!.length - 3)} {to}'
+                                          : widget.word.originalWord!,
+                                  style: const TextStyle(color: Color(0xFFFFA366)), // Soft orange
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
                   ],
                   
                   const Spacer(),

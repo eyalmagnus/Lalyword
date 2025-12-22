@@ -40,6 +40,19 @@ echo -e "${YELLOW}🔍 Step 3: Running Flutter doctor...${NC}"
 flutter doctor
 
 echo ""
+echo -e "${YELLOW}🔐 Step 3.5: Checking code signing certificates...${NC}"
+if security find-identity -v -p codesigning | grep -q "iPhone Distribution\|iPhone Developer"; then
+    echo -e "${GREEN}✅ Code signing certificates found${NC}"
+    security find-identity -v -p codesigning | grep "iPhone Distribution\|iPhone Developer" | head -3
+else
+    echo -e "${YELLOW}⚠️  No code signing certificates found${NC}"
+    echo "You may need to:"
+    echo "1. Open Xcode → Settings → Accounts"
+    echo "2. Add your Apple ID and download certificates"
+    echo "3. Or create certificates in Apple Developer Portal"
+fi
+
+echo ""
 echo -e "${YELLOW}📱 Step 4: Building iOS release...${NC}"
 echo "Choose deployment method:"
 echo "1) Build IPA for TestFlight/App Store"
@@ -63,7 +76,7 @@ case $choice in
         ;;
     2)
         echo -e "${GREEN}Building IPA for Ad-hoc distribution...${NC}"
-        flutter build ipa --release
+        flutter build ipa --release --export-method ad-hoc
         echo ""
         echo -e "${GREEN}✅ Build complete!${NC}"
         echo -e "IPA location: ${GREEN}build/ios/ipa/lalyword.ipa${NC}"

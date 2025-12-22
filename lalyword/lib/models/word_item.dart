@@ -4,6 +4,7 @@ class WordItem {
   final String? syllables; // e.g. "beau.ti.ful"
   final String? audioUrl;
   final String? phonetic;
+  final String? originalWord; // Original word before modification (e.g., "behaviors" -> "behavior")
   
   // Activity tracking
   final int timesShown; // Number of times this word was shown
@@ -18,6 +19,7 @@ class WordItem {
     this.syllables,
     this.audioUrl,
     this.phonetic,
+    this.originalWord,
     this.timesShown = 0,
     this.timesHeard = 0,
     this.timesSyllablesShown = 0,
@@ -31,6 +33,7 @@ class WordItem {
     String? syllables,
     String? audioUrl,
     String? phonetic,
+    String? originalWord,
     int? timesShown,
     int? timesHeard,
     int? timesSyllablesShown,
@@ -43,6 +46,7 @@ class WordItem {
       syllables: syllables ?? this.syllables,
       audioUrl: audioUrl ?? this.audioUrl,
       phonetic: phonetic ?? this.phonetic,
+      originalWord: originalWord ?? this.originalWord,
       timesShown: timesShown ?? this.timesShown,
       timesHeard: timesHeard ?? this.timesHeard,
       timesSyllablesShown: timesSyllablesShown ?? this.timesSyllablesShown,
@@ -59,6 +63,7 @@ class WordItem {
       'syllables': syllables,
       'audioUrl': audioUrl,
       'phonetic': phonetic,
+      'originalWord': originalWord,
       'timesShown': timesShown,
       'timesHeard': timesHeard,
       'timesSyllablesShown': timesSyllablesShown,
@@ -75,6 +80,7 @@ class WordItem {
       syllables: json['syllables'] as String?,
       audioUrl: json['audioUrl'] as String?,
       phonetic: json['phonetic'] as String?,
+      originalWord: json['originalWord'] as String?,
       timesShown: json['timesShown'] as int? ?? 0,
       timesHeard: json['timesHeard'] as int? ?? 0,
       timesSyllablesShown: json['timesSyllablesShown'] as int? ?? 0,

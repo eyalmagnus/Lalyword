@@ -501,7 +501,11 @@ class _SpellContentState extends ConsumerState<SpellContent> {
                   if (_isFlipped) ...[
                     // ENGLISH SIDE (flipped)
                     Text(
-                      widget.word.englishWord,
+                      widget.word.englishWord.toLowerCase().startsWith('to ') && widget.word.englishWord.length > 3
+                          ? '(to) ${widget.word.englishWord.substring(3)}'
+                          : widget.word.englishWord.toLowerCase().endsWith(' to') && widget.word.englishWord.length > 4
+                              ? '${widget.word.englishWord.substring(0, widget.word.englishWord.length - 3)} {to}'
+                              : widget.word.englishWord,
                       style: Theme.of(context).textTheme.displayMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),

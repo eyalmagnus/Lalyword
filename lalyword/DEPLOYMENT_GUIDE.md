@@ -180,6 +180,120 @@ Run the provided `deploy_ios.sh` script for automated deployment.
    - TestFlight: Make sure they have TestFlight app installed
    - Ad-hoc: They need to trust developer certificate in Settings → General → VPN & Device Management
 
+### Specific Error: "No signing certificate 'iOS Distribution' found"
+
+This error occurs when trying to build for App Store distribution without the proper certificates.
+
+**Solution Steps:**
+
+1. **Check Your Apple Developer Account Status:**
+   ```bash
+   # Open Xcode and check your account
+   open ios/Runner.xcworkspace
+   ```
+   - In Xcode: **Xcode → Settings → Accounts**
+   - Select your Apple ID
+   - Verify you see your team "Eyal Magnus" listed
+   - If team shows "Free" or "Personal Team", you need a paid Developer account ($99/year)
+
+2. **If You Have a Paid Developer Account:**
+   
+   **Option A: Let Xcode Auto-Manage (Recommended)**
+   - Open Xcode: `open ios/Runner.xcworkspace`
+   - Select **Runner** project in left sidebar
+   - Select **Runner** target
+   - Go to **Signing & Capabilities** tab
+   - Check **"Automatically manage signing"**
+   - Select your team from dropdown
+   - Xcode will automatically create certificates and profiles
+
+   **Option B: Manual Certificate Creation**
+   - Go to [Apple Developer Portal](https://developer.apple.com/account)
+   - Navigate to **Certificates, Identifiers & Profiles**
+   - **Certificates** → Click **+** → Select **iOS Distribution** → Follow wizard
+   - Download and double-click to install certificate
+   - **Profiles** → Click **+** → Select **App Store** → Select your App ID → Select certificate → Download
+   - Double-click the `.mobileprovision` file to install
+
+3. **If You DON'T Have a Paid Developer Account:**
+   
+   You have two options:
+   
+   **Option 1: Use Ad-hoc Distribution (Free, but limited)**
+   - You can build for specific devices using your free Apple ID
+   - Limited to 3 apps and 10 devices per year
+   - Change build command:
+     ```bash
+     flutter build ipa --release --export-method ad-hoc
+     ```
+   - Or use Xcode: Product → Archive → Distribute App → Ad Hoc
+   
+   **Option 2: Sign Up for Developer Account**
+   - Go to https://developer.apple.com/programs/
+   - Pay $99/year
+   - Wait for account activation (usually instant, can take up to 48 hours)
+
+### Specific Error: "Team does not have permission to create iOS App Store provisioning profiles"
+
+This means your Apple ID account doesn't have the right role/permissions.
+
+**Solution:**
+
+1. **Check Account Role:**
+   - Go to [App Store Connect](https://appstoreconnect.apple.com)
+   - Navigate to **Users and Access**
+   - Check your role - you need **Admin** or **App Manager** role
+   - If you're **Member** or **Customer Support**, ask an Admin to upgrade your role
+
+2. **If You're the Account Owner:**
+   - Make sure your Developer Program membership is active
+   - Check payment status at https://developer.apple.com/account
+   - Verify your account isn't expired
+
+3. **Alternative: Use Xcode's Automatic Signing:**
+   ```bash
+   open ios/Runner.xcworkspace
+   ```
+   - Xcode can sometimes work around permission issues
+   - Select **Runner** → **Signing & Capabilities**
+   - Enable **"Automatically manage signing"**
+   - Select your team
+   - Xcode will attempt to create profiles automatically
+
+### Quick Fix: Try Building with Xcode Instead
+
+Sometimes Flutter's build process has issues with certificates. Try building directly in Xcode:
+
+```bash
+# 1. Open workspace (not .xcodeproj!)
+open ios/Runner.xcworkspace
+
+# 2. In Xcode:
+#    - Select "Any iOS Device" or "Generic iOS Device" as target
+#    - Product → Clean Build Folder (Shift+Cmd+K)
+#    - Product → Archive
+#    - Wait for archive to complete
+#    - In Organizer, click "Distribute App"
+#    - Choose your distribution method
+```
+
+### Verify Your Setup
+
+Run these commands to check your certificates:
+
+```bash
+# List all certificates
+security find-identity -v -p codesigning
+
+# Check provisioning profiles
+ls ~/Library/MobileDevice/Provisioning\ Profiles/
+```
+
+You should see:
+- An "iPhone Distribution" certificate (for App Store)
+- Or "iPhone Developer" certificate (for development/ad-hoc)
+- Provisioning profiles matching your bundle ID
+
 ## Next Steps
 
 - For production release: Follow App Store submission process
