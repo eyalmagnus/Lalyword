@@ -353,192 +353,265 @@ class _FlashcardContentState extends ConsumerState<FlashcardContent> {
           child: Card(
             elevation: 8,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-            child: Padding(
-              padding: const EdgeInsets.all(32.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  if (_isFlipped) ...[
-                      // HEBREW SIDE
-                      Text(
-                        widget.word.hebrewWord ?? 'Translating...',
-                        style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                        textAlign: TextAlign.center,
-                        textDirection: TextDirection.rtl,
-                      ),
-                      const SizedBox(height: 20),
-                      Text(
-                        '(Swipe to flip back)',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey),
-                      ),
-                  ] else ...[
-                      // ENGLISH SIDE
-                      // ENGLISH SIDE
-                      // If Syllables enabled AND available, show syllables as MAIN text or sub text?
-                      // User said: "when enabled, all the English words show a dot between silables"
-                      // This implies the main "English Word" display should be the syllabified version.
-                      
-                      Builder(builder: (context) {
-                         // Use local state
-                         // Check both null AND empty string
-                         final hasSyllables = widget.word.syllables != null && 
-                                            widget.word.syllables!.isNotEmpty;
-                         
-                         // Format word: if it starts with "to ", show as "(to) word"
-                         // If it ends with " to", show as "word {to}"
-                         String formattedWord = widget.word.englishWord;
-                         if (formattedWord.toLowerCase().startsWith('to ') && formattedWord.length > 3) {
-                           formattedWord = '(to) ${formattedWord.substring(3)}';
-                         } else if (formattedWord.toLowerCase().endsWith(' to') && formattedWord.length > 4) {
-                           formattedWord = '${formattedWord.substring(0, formattedWord.length - 3)} {to}';
-                         }
-                         
-                         var displayText = (_showSyllablesLocal && hasSyllables) 
-                             ? widget.word.syllables! 
-                             : formattedWord;
+            child: Stack(
+              children: [
+                // Main content
+                Padding(
+                  padding: const EdgeInsets.all(32.0),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // Up button space at top
+                      const SizedBox(height: 48),
+                      if (_isFlipped) ...[
+                          // HEBREW SIDE
+                          Text(
+                            widget.word.hebrewWord ?? 'Translating...',
+                            style: Theme.of(context).textTheme.displayMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                            textAlign: TextAlign.center,
+                            textDirection: TextDirection.rtl,
+                          ),
+                          const SizedBox(height: 20),
+                          Text(
+                            '(Swipe to flip back)',
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey),
+                          ),
+                      ] else ...[
+                          // ENGLISH SIDE
+                          // If Syllables enabled AND available, show syllables as MAIN text or sub text?
+                          // User said: "when enabled, all the English words show a dot between silables"
+                          // This implies the main "English Word" display should be the syllabified version.
+                          
+                          Builder(builder: (context) {
+                             // Use local state
+                             // Check both null AND empty string
+                             final hasSyllables = widget.word.syllables != null && 
+                                                widget.word.syllables!.isNotEmpty;
+                             
+                             // Format word: if it starts with "to ", show as "(to) word"
+                             // If it ends with " to", show as "word {to}"
+                             String formattedWord = widget.word.englishWord;
+                             if (formattedWord.toLowerCase().startsWith('to ') && formattedWord.length > 3) {
+                               formattedWord = '(to) ${formattedWord.substring(3)}';
+                             } else if (formattedWord.toLowerCase().endsWith(' to') && formattedWord.length > 4) {
+                               formattedWord = '${formattedWord.substring(0, formattedWord.length - 3)} {to}';
+                             }
+                             
+                             var displayText = (_showSyllablesLocal && hasSyllables) 
+                                 ? widget.word.syllables! 
+                                 : formattedWord;
 
-                         // Single syllable check: if we are showing syllables, and there are no dots inside, add one at end.
-                         if (_showSyllablesLocal && hasSyllables && !displayText.contains('.')) {
-                           displayText = '$displayText.';
-                         }
-                         
-                         // Track syllables shown when displaying syllables (only once per word display)
-                         if (_showSyllablesLocal && hasSyllables && !_syllablesTrackedForCurrentWord) {
-                           WidgetsBinding.instance.addPostFrameCallback((_) {
-                             _trackSyllablesShown();
-                             _syllablesTrackedForCurrentWord = true;
-                           });
-                         }
+                             // Single syllable check: if we are showing syllables, and there are no dots inside, add one at end.
+                             if (_showSyllablesLocal && hasSyllables && !displayText.contains('.')) {
+                               displayText = '$displayText.';
+                             }
+                             
+                             // Track syllables shown when displaying syllables (only once per word display)
+                             if (_showSyllablesLocal && hasSyllables && !_syllablesTrackedForCurrentWord) {
+                               WidgetsBinding.instance.addPostFrameCallback((_) {
+                                 _trackSyllablesShown();
+                                 _syllablesTrackedForCurrentWord = true;
+                               });
+                             }
 
-                         return Column(
-                           children: [
-                             Row(
-                               mainAxisAlignment: MainAxisAlignment.center,
+                             return Column(
                                children: [
-                                  // Invisible spacer to balance the icon if we want it strictly centered
-                                  // Or just place icon to the right/top-right
-                                  Flexible(
-                                    child: FittedBox(
-                                      fit: BoxFit.scaleDown,
-                                      child: Text(
-                                        displayText,
-                                        style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                                          fontWeight: FontWeight.bold,
+                                 Row(
+                                   mainAxisAlignment: MainAxisAlignment.center,
+                                   children: [
+                                      // Invisible spacer to balance the icon if we want it strictly centered
+                                      // Or just place icon to the right/top-right
+                                      Flexible(
+                                        child: FittedBox(
+                                          fit: BoxFit.scaleDown,
+                                          child: Text(
+                                            displayText,
+                                            style: Theme.of(context).textTheme.displayMedium?.copyWith(
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                            textAlign: TextAlign.center,
+                                            maxLines: 1,
+                                          ),
                                         ),
-                                        textAlign: TextAlign.center,
-                                        maxLines: 1,
                                       ),
+                                      if (hasSyllables) 
+                                        IconButton(
+                                          icon: Icon(
+                                            _showSyllablesLocal ? Icons.visibility_off : Icons.visibility,
+                                            size: 20,
+                                            color: Colors.grey,
+                                          ),
+                                          onPressed: () {
+                                            setState(() {
+                                              final wasShowing = _showSyllablesLocal;
+                                              _showSyllablesLocal = !_showSyllablesLocal;
+                                              // Track when syllables are toggled on
+                                              if (!wasShowing && _showSyllablesLocal && hasSyllables) {
+                                                _trackSyllablesShown();
+                                                _syllablesTrackedForCurrentWord = true;
+                                              }
+                                            });
+                                          },
+                                          tooltip: _showSyllablesLocal ? 'Hide Syllables' : 'Show Syllables',
+                                        ),
+                                   ],
+                                 ),
+                               ],
+                             );
+                          }),
+                          
+                          const SizedBox(height: 16),
+
+                          if (_enriching)
+                            const SizedBox(
+                              width: 20, height: 20, 
+                              child: CircularProgressIndicator(strokeWidth: 2)
+                            ),
+                          
+                          const SizedBox(height: 48),
+                          
+                          // Audio Button
+                          IconButton.filled(
+                            icon: const Icon(Icons.volume_up, size: 32),
+                            onPressed: (widget.word.audioUrl != null && widget.word.audioUrl!.isNotEmpty)
+                                ? _playSound
+                                : null,
+                            style: IconButton.styleFrom(padding: const EdgeInsets.all(16)),
+                          ),
+                          
+                          Padding(
+                            padding: const EdgeInsets.only(top: 16.0),
+                            child: Column(
+                              children: [
+                                if (widget.word.phonetic != null)
+                                  Text(
+                                    widget.word.phonetic!,
+                                    style: const TextStyle(color: Colors.grey, fontStyle: FontStyle.italic),
+                                  ),
+                                if (widget.word.originalWord != null)
+                                  Padding(
+                                    padding: EdgeInsets.only(top: widget.word.phonetic != null ? 8.0 : 0.0),
+                                    child: Text(
+                                      widget.word.originalWord!.toLowerCase().startsWith('to ')
+                                          ? '(to) ${widget.word.originalWord!.substring(3)}'
+                                          : widget.word.originalWord!.toLowerCase().endsWith(' to') && widget.word.originalWord!.length > 4
+                                              ? '${widget.word.originalWord!.substring(0, widget.word.originalWord!.length - 3)} {to}'
+                                              : widget.word.originalWord!,
+                                      style: const TextStyle(color: Color(0xFFFFA366)), // Soft orange
                                     ),
                                   ),
-                                  if (hasSyllables) 
-                                    IconButton(
-                                      icon: Icon(
-                                        _showSyllablesLocal ? Icons.visibility_off : Icons.visibility,
-                                        size: 20,
-                                        color: Colors.grey,
-                                      ),
-                                      onPressed: () {
-                                        setState(() {
-                                          final wasShowing = _showSyllablesLocal;
-                                          _showSyllablesLocal = !_showSyllablesLocal;
-                                          // Track when syllables are toggled on
-                                          if (!wasShowing && _showSyllablesLocal && hasSyllables) {
-                                            _trackSyllablesShown();
-                                            _syllablesTrackedForCurrentWord = true;
-                                          }
-                                        });
-                                      },
-                                      tooltip: _showSyllablesLocal ? 'Hide Syllables' : 'Show Syllables',
-                                    ),
-                               ],
-                             ),
-                           ],
-                         );
-                      }),
-                      
-                      const SizedBox(height: 16),
-
-                      if (_enriching)
-                        const SizedBox(
-                          width: 20, height: 20, 
-                          child: CircularProgressIndicator(strokeWidth: 2)
-                        ),
-                      
-                      const SizedBox(height: 48),
-                      
-                      // Audio Button
-                      IconButton.filled(
-                        icon: const Icon(Icons.volume_up, size: 32),
-                        onPressed: (widget.word.audioUrl != null && widget.word.audioUrl!.isNotEmpty)
-                            ? _playSound
-                            : null,
-                        style: IconButton.styleFrom(padding: const EdgeInsets.all(16)),
-                      ),
-                      
-                      Padding(
-                        padding: const EdgeInsets.only(top: 16.0),
-                        child: Column(
-                          children: [
-                            if (widget.word.phonetic != null)
-                              Text(
-                                widget.word.phonetic!,
-                                style: const TextStyle(color: Colors.grey, fontStyle: FontStyle.italic),
-                              ),
-                            if (widget.word.originalWord != null)
-                              Padding(
-                                padding: EdgeInsets.only(top: widget.word.phonetic != null ? 8.0 : 0.0),
-                                child: Text(
-                                  widget.word.originalWord!.toLowerCase().startsWith('to ')
-                                      ? '(to) ${widget.word.originalWord!.substring(3)}'
-                                      : widget.word.originalWord!.toLowerCase().endsWith(' to') && widget.word.originalWord!.length > 4
-                                          ? '${widget.word.originalWord!.substring(0, widget.word.originalWord!.length - 3)} {to}'
-                                          : widget.word.originalWord!,
-                                  style: const TextStyle(color: Color(0xFFFFA366)), // Soft orange
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                  ],
-                  
-                  const Spacer(),
-                  
-                  // "I know this word" checkbox
-                  if (widget.onToggleKnown != null)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 16.0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Checkbox(
-                            value: widget.isKnown,
-                            onChanged: (_) => widget.onToggleKnown!(),
-                            checkColor: Colors.white,
-                            fillColor: widget.isKnown 
-                                ? WidgetStateProperty.all(Colors.green)
-                                : WidgetStateProperty.all(null),
-                          ),
-                          Text(
-                            'I know this word',
-                            style: widget.isKnown
-                                ? const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)
-                                : null,
-                          ),
-                          if (widget.isKnown)
-                            const Padding(
-                              padding: EdgeInsets.only(left: 8.0),
-                              child: Icon(Icons.check_circle, color: Colors.green, size: 20),
+                              ],
                             ),
-                        ],
+                          ),
+                      ],
+                      
+                      const Spacer(),
+                      
+                      // "I know this word" checkbox
+                      if (widget.onToggleKnown != null)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 16.0),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Checkbox(
+                                value: widget.isKnown,
+                                onChanged: (_) => widget.onToggleKnown!(),
+                                checkColor: Colors.white,
+                                fillColor: widget.isKnown 
+                                    ? WidgetStateProperty.all(Colors.green)
+                                    : WidgetStateProperty.all(null),
+                              ),
+                              Text(
+                                'I know this word',
+                                style: widget.isKnown
+                                    ? const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)
+                                    : null,
+                              ),
+                              if (widget.isKnown)
+                                const Padding(
+                                  padding: EdgeInsets.only(left: 8.0),
+                                  child: Icon(Icons.check_circle, color: Colors.green, size: 20),
+                                ),
+                            ],
+                          ),
+                        ),
+                      
+                      // Down button (Prev) - stays at bottom
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 16.0),
+                        child: IconButton(
+                          icon: const Icon(Icons.expand_more_rounded, color: Colors.grey),
+                          onPressed: widget.onPrev,
+                          tooltip: 'Previous word',
+                        ),
                       ),
+                      const SizedBox(height: 8),
+                      const Text('Swipe Up/Down for Next/Prev', style: TextStyle(color: Colors.grey)),
+                      const Text('Swipe Left/Right to Flip', style: TextStyle(color: Colors.grey)),
+                    ],
+                  ),
+                ),
+                // Up button at top
+                Positioned(
+                  top: 8,
+                  left: 0,
+                  right: 0,
+                  child: Center(
+                    child: IconButton(
+                      icon: const Icon(Icons.expand_less_rounded, color: Colors.grey),
+                      onPressed: widget.onNext,
+                      tooltip: 'Next word',
                     ),
-                  
-                  const Text('Swipe Up/Down for Next/Prev', style: TextStyle(color: Colors.grey)),
-                  const Text('Swipe Left/Right to Flip', style: TextStyle(color: Colors.grey)),
-                ],
-              ),
+                  ),
+                ),
+                // Left button - vertically centered, on the left
+                Positioned(
+                  left: 8,
+                  top: 0,
+                  bottom: 0,
+                  child: Center(
+                    child: IconButton(
+                      icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.grey),
+                      onPressed: () {
+                        setState(() {
+                          final wasFlipped = _isFlipped;
+                          _isFlipped = !_isFlipped;
+                          // Track Hebrew shown when flipping to Hebrew side
+                          if (!wasFlipped && _isFlipped) {
+                            _trackHebrewShown();
+                          }
+                        });
+                      },
+                      tooltip: 'Flip card',
+                    ),
+                  ),
+                ),
+                // Right button - vertically centered, on the right
+                Positioned(
+                  right: 8,
+                  top: 0,
+                  bottom: 0,
+                  child: Center(
+                    child: IconButton(
+                      icon: const Icon(Icons.arrow_forward_ios_rounded, color: Colors.grey),
+                      onPressed: () {
+                        setState(() {
+                          final wasFlipped = _isFlipped;
+                          _isFlipped = !_isFlipped;
+                          // Track Hebrew shown when flipping to Hebrew side
+                          if (!wasFlipped && _isFlipped) {
+                            _trackHebrewShown();
+                          }
+                        });
+                      },
+                      tooltip: 'Flip card',
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ),

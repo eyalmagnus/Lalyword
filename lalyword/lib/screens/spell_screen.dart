@@ -530,229 +530,292 @@ class _SpellContentState extends ConsumerState<SpellContent> {
                 child: Card(
                   elevation: 8,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 24.0),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                  if (_isFlipped) ...[
-                    // ENGLISH SIDE (flipped)
-                    Text(
-                      widget.word.englishWord.toLowerCase().startsWith('to ') && widget.word.englishWord.length > 3
-                          ? '(to) ${widget.word.englishWord.substring(3)}'
-                          : widget.word.englishWord.toLowerCase().endsWith(' to') && widget.word.englishWord.length > 4
-                              ? '${widget.word.englishWord.substring(0, widget.word.englishWord.length - 3)} {to}'
-                              : widget.word.englishWord,
-                      style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      '(Swipe to flip back)',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey),
-                    ),
-                  ] else ...[
-                    // HEBREW SIDE (default)
-                    Text(
-                      widget.word.hebrewWord ?? 'Translating...',
-                      style: widget.word.hebrewWord == null || widget.word.hebrewWord!.isEmpty
-                          ? Theme.of(context).textTheme.bodyLarge?.copyWith(
-                              fontWeight: FontWeight.normal,
-                              color: Colors.grey,
-                            )
-                          : Theme.of(context).textTheme.displayMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
-                      textAlign: TextAlign.center,
-                      textDirection: widget.word.hebrewWord != null && widget.word.hebrewWord!.isNotEmpty
-                          ? TextDirection.rtl
-                          : TextDirection.ltr,
-                    ),
-                    
-                    SizedBox(height: _isCorrect == false ? 20 : 28),
-                    
-                    // Sound button
-                    if (_enriching)
-                      const SizedBox(
-                        width: 20, height: 20, 
-                        child: CircularProgressIndicator(strokeWidth: 2)
-                      )
-                    else
-                      IconButton.filled(
-                        icon: const Icon(Icons.volume_up, size: 32),
-                        onPressed: (widget.word.audioUrl != null && widget.word.audioUrl!.isNotEmpty)
-                            ? _playSound
-                            : null,
-                        style: IconButton.styleFrom(padding: const EdgeInsets.all(16)),
-                      ),
-                    
-                    SizedBox(height: _isCorrect == false ? 20 : 28),
-                    
-                    // Text input field
-                    TextField(
-                      controller: widget.textController,
-                      focusNode: widget.focusNode,
-                      autofocus: true,
-                      textInputAction: TextInputAction.done,
-                      keyboardType: TextInputType.text,
-                      textCapitalization: TextCapitalization.none,
-                      autocorrect: false,
-                      enableSuggestions: false,
-                      enabled: _isCorrect != true, // Disable if correct
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: _isCorrect == true ? Colors.white : null,
-                      ),
-                      textAlign: TextAlign.center,
-                      decoration: InputDecoration(
-                        hintText: _isCorrect == true ? 'Correct!' : 'Type the word...',
-                        filled: _isCorrect == true,
-                        fillColor: _isCorrect == true ? Colors.green : null,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                            color: _isCorrect == true 
-                                ? Colors.green 
-                                : _isCorrect == false 
-                                    ? Colors.red 
-                                    : Theme.of(context).inputDecorationTheme.border?.borderSide.color ?? Colors.grey,
-                            width: _isCorrect != null ? 3 : 1,
-                          ),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                            color: _isCorrect == true 
-                                ? Colors.green 
-                                : _isCorrect == false 
-                                    ? Colors.red 
-                                    : Colors.grey,
-                            width: _isCorrect != null ? 3 : 1,
-                          ),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                            color: _isCorrect == true 
-                                ? Colors.green 
-                                : _isCorrect == false 
-                                    ? Colors.red 
-                                    : Theme.of(context).colorScheme.primary,
-                            width: _isCorrect != null ? 3 : 2,
-                          ),
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 16,
-                        ),
-                      ),
-                      inputFormatters: [
-                        FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z\s]')), // Only English letters and spaces
-                      ],
-                      onTap: () {
-                        widget.focusNode.requestFocus();
-                      },
-                      onChanged: (value) {
-                        // Reset check state when user types again after checking
-                        if (_isCorrect != null && value != _lastCheckedText) {
-                          setState(() {
-                            _isCorrect = null;
-                            _lastCheckedText = null;
-                          });
-                        }
-                      },
-                    ),
-                    
-                    // Show letter-by-letter feedback for incorrect spelling
-                    if (_isCorrect == false && _lastCheckedText != null)
+                  child: Stack(
+                    children: [
+                      // Main content
                       Padding(
-                        padding: const EdgeInsets.only(top: 12.0, left: 8.0, right: 8.0),
-                        child: _buildLetterFeedback(_lastCheckedText!, widget.word.englishWord.toLowerCase()),
-                      ),
-                    
-                    // Success message when correct
-                    if (_isCorrect == true)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 12.0),
-                        child: Row(
+                        padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 24.0),
+                        child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
-                          children: const [
-                            Icon(Icons.check_circle, color: Colors.green, size: 24),
-                            SizedBox(width: 8),
-                            Text(
-                              'Correct!',
-                              style: TextStyle(
-                                color: Colors.green,
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    
-                    SizedBox(height: _isCorrect == false ? 12 : 20),
-                    
-                    // Check button
-                    if (!_isFlipped)
-                      ElevatedButton.icon(
-                        onPressed: (widget.textController.text.trim().isEmpty || _isCorrect == true) 
-                            ? null 
-                            : _checkSpelling,
-                        icon: const Icon(Icons.check),
-                        label: const Text('Check'),
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                          backgroundColor: Theme.of(context).colorScheme.primary,
-                          foregroundColor: Colors.white,
-                        ),
-                      ),
-                    
-                    // "I know this word" checkbox
-                    if (!_isFlipped)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 12.0),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            Checkbox(
-                              value: widget.isKnown,
-                              onChanged: (_) => widget.onMarkKnown(),
-                              checkColor: Colors.white,
-                              fillColor: widget.isKnown 
-                                  ? WidgetStateProperty.all(Colors.green)
-                                  : WidgetStateProperty.all(null),
-                            ),
-                            Text(
-                              'I know this word',
-                              style: widget.isKnown
-                                  ? const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)
-                                  : null,
-                            ),
-                            if (widget.isKnown)
-                              const Padding(
-                                padding: EdgeInsets.only(left: 8.0),
-                                child: Icon(Icons.check_circle, color: Colors.green, size: 20),
+                            // Up button space at top
+                            const SizedBox(height: 48),
+                            if (_isFlipped) ...[
+                              // ENGLISH SIDE (flipped)
+                              Text(
+                                widget.word.englishWord.toLowerCase().startsWith('to ') && widget.word.englishWord.length > 3
+                                    ? '(to) ${widget.word.englishWord.substring(3)}'
+                                    : widget.word.englishWord.toLowerCase().endsWith(' to') && widget.word.englishWord.length > 4
+                                        ? '${widget.word.englishWord.substring(0, widget.word.englishWord.length - 3)} {to}'
+                                        : widget.word.englishWord,
+                                style: Theme.of(context).textTheme.displayMedium?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                textAlign: TextAlign.center,
                               ),
+                              const SizedBox(height: 16),
+                              Text(
+                                '(Swipe to flip back)',
+                                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey),
+                              ),
+                            ] else ...[
+                              // HEBREW SIDE (default)
+                              Text(
+                                widget.word.hebrewWord ?? 'Translating...',
+                                style: widget.word.hebrewWord == null || widget.word.hebrewWord!.isEmpty
+                                    ? Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                        fontWeight: FontWeight.normal,
+                                        color: Colors.grey,
+                                      )
+                                    : Theme.of(context).textTheme.displayMedium?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                textAlign: TextAlign.center,
+                                textDirection: widget.word.hebrewWord != null && widget.word.hebrewWord!.isNotEmpty
+                                    ? TextDirection.rtl
+                                    : TextDirection.ltr,
+                              ),
+                              
+                              SizedBox(height: _isCorrect == false ? 20 : 28),
+                              
+                              // Sound button
+                              if (_enriching)
+                                const SizedBox(
+                                  width: 20, height: 20, 
+                                  child: CircularProgressIndicator(strokeWidth: 2)
+                                )
+                              else
+                                IconButton.filled(
+                                  icon: const Icon(Icons.volume_up, size: 32),
+                                  onPressed: (widget.word.audioUrl != null && widget.word.audioUrl!.isNotEmpty)
+                                      ? _playSound
+                                      : null,
+                                  style: IconButton.styleFrom(padding: const EdgeInsets.all(16)),
+                                ),
+                              
+                              SizedBox(height: _isCorrect == false ? 20 : 28),
+                              
+                              // Text input field
+                              TextField(
+                                controller: widget.textController,
+                                focusNode: widget.focusNode,
+                                autofocus: true,
+                                textInputAction: TextInputAction.done,
+                                keyboardType: TextInputType.text,
+                                textCapitalization: TextCapitalization.none,
+                                autocorrect: false,
+                                enableSuggestions: false,
+                                enabled: _isCorrect != true, // Disable if correct
+                                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: _isCorrect == true ? Colors.white : null,
+                                ),
+                                textAlign: TextAlign.center,
+                                decoration: InputDecoration(
+                                  hintText: _isCorrect == true ? 'Correct!' : 'Type the word...',
+                                  filled: _isCorrect == true,
+                                  fillColor: _isCorrect == true ? Colors.green : null,
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide(
+                                      color: _isCorrect == true 
+                                          ? Colors.green 
+                                          : _isCorrect == false 
+                                              ? Colors.red 
+                                              : Theme.of(context).inputDecorationTheme.border?.borderSide.color ?? Colors.grey,
+                                      width: _isCorrect != null ? 3 : 1,
+                                    ),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide(
+                                      color: _isCorrect == true 
+                                          ? Colors.green 
+                                          : _isCorrect == false 
+                                              ? Colors.red 
+                                              : Colors.grey,
+                                      width: _isCorrect != null ? 3 : 1,
+                                    ),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide(
+                                      color: _isCorrect == true 
+                                          ? Colors.green 
+                                          : _isCorrect == false 
+                                              ? Colors.red 
+                                              : Theme.of(context).colorScheme.primary,
+                                      width: _isCorrect != null ? 3 : 2,
+                                    ),
+                                  ),
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 16,
+                                  ),
+                                ),
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z\s]')), // Only English letters and spaces
+                                ],
+                                onTap: () {
+                                  widget.focusNode.requestFocus();
+                                },
+                                onChanged: (value) {
+                                  // Reset check state when user types again after checking
+                                  if (_isCorrect != null && value != _lastCheckedText) {
+                                    setState(() {
+                                      _isCorrect = null;
+                                      _lastCheckedText = null;
+                                    });
+                                  }
+                                },
+                              ),
+                              
+                              // Show letter-by-letter feedback for incorrect spelling
+                              if (_isCorrect == false && _lastCheckedText != null)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 12.0, left: 8.0, right: 8.0),
+                                  child: _buildLetterFeedback(_lastCheckedText!, widget.word.englishWord.toLowerCase()),
+                                ),
+                              
+                              // Success message when correct
+                              if (_isCorrect == true)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 12.0),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: const [
+                                      Icon(Icons.check_circle, color: Colors.green, size: 24),
+                                      SizedBox(width: 8),
+                                      Text(
+                                        'Correct!',
+                                        style: TextStyle(
+                                          color: Colors.green,
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              
+                              SizedBox(height: _isCorrect == false ? 12 : 20),
+                              
+                              // Check button
+                              if (!_isFlipped)
+                                ElevatedButton.icon(
+                                  onPressed: (widget.textController.text.trim().isEmpty || _isCorrect == true) 
+                                      ? null 
+                                      : _checkSpelling,
+                                  icon: const Icon(Icons.check),
+                                  label: const Text('Check'),
+                                  style: ElevatedButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                                    backgroundColor: Theme.of(context).colorScheme.primary,
+                                    foregroundColor: Colors.white,
+                                  ),
+                                ),
+                              
+                              // "I know this word" checkbox
+                              if (!_isFlipped)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 12.0),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Checkbox(
+                                        value: widget.isKnown,
+                                        onChanged: (_) => widget.onMarkKnown(),
+                                        checkColor: Colors.white,
+                                        fillColor: widget.isKnown 
+                                            ? WidgetStateProperty.all(Colors.green)
+                                            : WidgetStateProperty.all(null),
+                                      ),
+                                      Text(
+                                        'I know this word',
+                                        style: widget.isKnown
+                                            ? const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)
+                                            : null,
+                                      ),
+                                      if (widget.isKnown)
+                                        const Padding(
+                                          padding: EdgeInsets.only(left: 8.0),
+                                          child: Icon(Icons.check_circle, color: Colors.green, size: 20),
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                            ],
+                            const SizedBox(height: 12),
+                            
+                            // Down button (Prev) - stays at bottom
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 16.0),
+                              child: IconButton(
+                                icon: const Icon(Icons.expand_more_rounded, color: Colors.grey),
+                                onPressed: widget.onPrev,
+                                tooltip: 'Previous word',
+                              ),
+                            ),
+                            const Text(
+                              'Swipe Up/Down for Next/Prev',
+                              style: TextStyle(color: Colors.grey, fontSize: 12),
+                            ),
+                            const Text(
+                              'Swipe Left/Right to Flip',
+                              style: TextStyle(color: Colors.grey, fontSize: 12),
+                            ),
                           ],
                         ),
                       ),
-                  ],
-                        const SizedBox(height: 12),
-                        
-                        const Text(
-                          'Swipe Up/Down for Next/Prev',
-                          style: TextStyle(color: Colors.grey, fontSize: 12),
+                      // Up button at top
+                      Positioned(
+                        top: 8,
+                        left: 0,
+                        right: 0,
+                        child: Center(
+                          child: IconButton(
+                            icon: const Icon(Icons.expand_less_rounded, color: Colors.grey),
+                            onPressed: widget.onNext,
+                            tooltip: 'Next word',
+                          ),
                         ),
-                        const Text(
-                          'Swipe Left/Right to Flip',
-                          style: TextStyle(color: Colors.grey, fontSize: 12),
+                      ),
+                      // Left button - vertically centered, on the left
+                      Positioned(
+                        left: 8,
+                        top: 0,
+                        bottom: 0,
+                        child: Center(
+                          child: IconButton(
+                            icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.grey),
+                            onPressed: () {
+                              setState(() {
+                                _isFlipped = !_isFlipped;
+                              });
+                            },
+                            tooltip: 'Flip card',
+                          ),
                         ),
-                      ],
-                    ),
+                      ),
+                      // Right button - vertically centered, on the right
+                      Positioned(
+                        right: 8,
+                        top: 0,
+                        bottom: 0,
+                        child: Center(
+                          child: IconButton(
+                            icon: const Icon(Icons.arrow_forward_ios_rounded, color: Colors.grey),
+                            onPressed: () {
+                              setState(() {
+                                _isFlipped = !_isFlipped;
+                              });
+                            },
+                            tooltip: 'Flip card',
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
