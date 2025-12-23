@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:video_player/video_player.dart';
 import 'list_selection_screen.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -8,137 +10,141 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _fadeAnimation;
-  late Animation<double> _scaleAnimation;
+class _SplashScreenState extends State<SplashScreen> {
+  VideoPlayerController? _controller;
+  bool _isInitialized = false;
+  bool _hasError = false;
+  bool _hasNavigated = false;
+  Timer? _completionTimer;
 
   @override
   void initState() {
     super.initState();
-    
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 1500),
-      vsync: this,
-    );
+    _initializeVideo();
+  }
 
-    _fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeIn,
-    ));
-
-    _scaleAnimation = Tween<double>(
-      begin: 0.5,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.elasticOut,
-    ));
-
-    _controller.forward();
-
-    // Navigate to home after animation completes
-    Future.delayed(const Duration(milliseconds: 2500), () {
+  Future<void> _initializeVideo() async {
+    try {
+      final controller = VideoPlayerController.asset('assets/intro.mp4');
+      await controller.initialize();
+      _controller = controller;
+      
       if (mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const ListSelectionScreen()),
-        );
+        // Set looping to false
+        await _controller!.setLooping(false);
+        
+        setState(() {
+          _isInitialized = true;
+        });
+        
+        await _controller!.play();
+        
+        // Start periodic check for video completion
+        _startCompletionCheck();
+      }
+    } catch (e) {
+      print('Error initializing splash video: $e');
+      if (mounted) {
+        setState(() {
+          _hasError = true;
+        });
+        // Navigate immediately on error after a short delay
+        Future.delayed(const Duration(milliseconds: 500), () {
+          if (mounted && !_hasNavigated) {
+            _hasNavigated = true;
+            _navigateToHome();
+          }
+        });
+      }
+    }
+  }
+
+  void _startCompletionCheck() {
+    _completionTimer?.cancel();
+    _completionTimer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
+      if (_hasNavigated || _controller == null || !mounted) {
+        timer.cancel();
+        return;
+      }
+      
+      final value = _controller!.value;
+      
+      // Check if video has completed
+      if (value.duration.inMilliseconds > 0) {
+        final positionMs = value.position.inMilliseconds;
+        final durationMs = value.duration.inMilliseconds;
+        
+        print('Video position: $positionMs / $durationMs');
+        
+        // Video is complete if position is at or past duration
+        if (positionMs >= durationMs - 50) {
+          print('Video completed! Navigating...');
+          timer.cancel();
+          _hasNavigated = true;
+          _navigateToHome();
+        }
       }
     });
+    
+    // Fallback: navigate after video duration + buffer
+    final duration = _controller!.value.duration;
+    print('Video duration: ${duration.inMilliseconds}ms');
+    if (duration.inMilliseconds > 0) {
+      Future.delayed(Duration(milliseconds: duration.inMilliseconds + 1000), () {
+        print('Fallback timer triggered. Has navigated: $_hasNavigated, mounted: $mounted');
+        if (mounted && !_hasNavigated) {
+          _completionTimer?.cancel();
+          _hasNavigated = true;
+          _navigateToHome();
+        }
+      });
+    }
+  }
+
+  void _navigateToHome() {
+    print('_navigateToHome called. Has navigated: $_hasNavigated, mounted: $mounted');
+    if (!mounted) {
+      print('Not mounted, skipping navigation');
+      return;
+    }
+    print('Navigating to ListSelectionScreen...');
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (context) => const ListSelectionScreen()),
+    );
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _completionTimer?.cancel();
+    _controller?.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              theme.colorScheme.primary,
-              theme.colorScheme.primaryContainer,
-              theme.colorScheme.secondary,
-            ],
-          ),
-        ),
-        child: Center(
-          child: AnimatedBuilder(
-            animation: _controller,
-            builder: (context, child) {
-              return Opacity(
-                opacity: _fadeAnimation.value,
-                child: Transform.scale(
-                  scale: _scaleAnimation.value,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      // App Icon/Logo placeholder
-                      Container(
-                        width: 120,
-                        height: 120,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: Colors.white,
-                            width: 3,
-                          ),
-                        ),
-                        child: Icon(
-                          Icons.book,
-                          size: 60,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const SizedBox(height: 40),
-                      // App Name
-                      Text(
-                        'LalyWord',
-                        style: TextStyle(
-                          fontSize: 48,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                          letterSpacing: 2,
-                          shadows: [
-                            Shadow(
-                              color: Colors.black.withOpacity(0.3),
-                              offset: const Offset(0, 2),
-                              blurRadius: 4,
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      // Subtitle
-                      Text(
-                        'Learn Words, Master Language',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.white.withOpacity(0.9),
-                          letterSpacing: 1,
-                          fontWeight: FontWeight.w300,
-                        ),
-                      ),
-                    ],
+      backgroundColor: Colors.black,
+      body: Center(
+        child: _hasError
+            ? const Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.play_circle_outline, size: 64, color: Colors.white),
+                  SizedBox(height: 16),
+                  Text(
+                    'Loading...',
+                    style: TextStyle(color: Colors.white),
                   ),
-                ),
-              );
-            },
-          ),
-        ),
+                ],
+              )
+            : _isInitialized && _controller != null
+                ? AspectRatio(
+                    aspectRatio: _controller!.value.aspectRatio,
+                    child: VideoPlayer(_controller!),
+                  )
+                : const CircularProgressIndicator(
+                    color: Colors.white,
+                  ),
       ),
     );
   }

@@ -5,6 +5,7 @@ import 'flashcard_screen.dart';
 import 'spell_screen.dart';
 import 'settings_screen.dart';
 import 'activity_screen.dart';
+import 'video_transition_screen.dart';
 
 enum PracticeMode { memo, spell }
 
@@ -163,20 +164,38 @@ class _ListSelectionScreenState extends ConsumerState<ListSelectionScreen> with 
                   trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                   onTap: () {
                     ref.read(selectedListProvider.notifier).state = name;
-                    if (_selectedMode == PracticeMode.memo) {
+                    
+                    // Check if transition video has been shown
+                    final hasShownTransition = ref.read(transitionVideoShownProvider);
+                    
+                    if (!hasShownTransition) {
+                      // Mark as shown and navigate through video transition
+                      ref.read(transitionVideoShownProvider.notifier).state = true;
+                      
+                      final targetScreen = _selectedMode == PracticeMode.memo ? 'flashcard' : 'spell';
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const FlashcardScreen(),
+                          builder: (context) => VideoTransitionScreen(targetScreen: targetScreen),
                         ),
                       );
                     } else {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const SpellScreen(),
-                        ),
-                      );
+                      // Navigate directly to target screen
+                      if (_selectedMode == PracticeMode.memo) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const FlashcardScreen(),
+                          ),
+                        );
+                      } else {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const SpellScreen(),
+                          ),
+                        );
+                      }
                     }
                   },
                 ),

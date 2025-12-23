@@ -325,6 +325,9 @@ final sessionProvider = StateNotifierProvider<SessionNotifier, List<WordItem>>((
   return SessionNotifier();
 });
 
+// Transition Video State - tracks if funnylaly.mp4 has been shown in current app run
+final transitionVideoShownProvider = StateProvider<bool>((ref) => false);
+
 // Activity Data Provider - returns words grouped by list
 final activityDataProvider = FutureProvider<Map<String, List<WordItem>>>((ref) async {
   final storageService = ref.read(storageServiceProvider);
