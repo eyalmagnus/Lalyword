@@ -103,15 +103,10 @@ class SheetService {
     
     if (_worksheet == null) return [];
     
-    // Fetch the English column and the one to its left (Hebrew)
-    // English Col Index is 1-based. Hebrew is englishColIndex - 1.
+    // Fetch the English column and the one to its right (Hebrew)
+    // English Col Index is 1-based. Hebrew is englishColIndex + 1.
     
-    if (englishColIndex <= 1) {
-        // Can't have a column to the left of the first one
-        return []; 
-    }
-
-    final int hebrewColIndex = englishColIndex - 1;
+    final int hebrewColIndex = englishColIndex + 1;
     
     final englishValues = await _worksheet!.values.column(englishColIndex, fromRow: 2);
     final hebrewValues = await _worksheet!.values.column(hebrewColIndex, fromRow: 2);
@@ -159,20 +154,11 @@ class SheetService {
       
       final englishCol = getColumnLetter(englishColIndex);
       
-      // If English is in column 1 (A), there's no Hebrew column
-      // Otherwise, Hebrew is to the left
-      String range;
-      bool hasHebrewCol = englishColIndex > 1;
-      
-      if (hasHebrewCol) {
-        final int hebrewColIndex = englishColIndex - 1;
-        final hebrewCol = getColumnLetter(hebrewColIndex);
-        // Fetch both columns from row 2 onwards (e.g., A2:B100)
-        range = '$hebrewCol' '2:$englishCol' '100';
-      } else {
-        // Only English column (e.g., A2:A100)
-        range = '$englishCol' '2:$englishCol' '100';
-      }
+      // Hebrew is to the right of English (e.g., if English is in C, Hebrew is in D)
+      final int hebrewColIndex = englishColIndex + 1;
+      final hebrewCol = getColumnLetter(hebrewColIndex);
+      // Fetch both columns from row 2 onwards (e.g., C2:D100)
+      final range = '$englishCol' '2:$hebrewCol' '100';
       
       final url = Uri.parse(
         'https://sheets.googleapis.com/v4/spreadsheets/$_publicSheetId/values/$range?key=${AppConstants.googleSheetsApiKey}'
@@ -191,26 +177,20 @@ class SheetService {
           
           for (var row in values) {
             if (row is List && row.isNotEmpty) {
-              if (hasHebrewCol && row.length >= 2) {
-                // Both Hebrew and English columns
-                final hebrew = row[0].toString().trim();
-                final english = row[1].toString().trim();
+              // English is first column, Hebrew is second column (to the right)
+              final english = row[0].toString().trim();
+              
+              if (english.isNotEmpty) {
+                String? hebrew;
+                if (row.length >= 2) {
+                  hebrew = row[1].toString().trim();
+                  if (hebrew.isEmpty) hebrew = null;
+                }
                 
-                if (english.isNotEmpty) {
-                  words.add(WordItem(
-                    englishWord: english,
-                    hebrewWord: hebrew.isEmpty ? null : hebrew,
-                  ));
-                }
-              } else {
-                // Only English column
-                final english = row[0].toString().trim();
-                if (english.isNotEmpty) {
-                  words.add(WordItem(
-                    englishWord: english,
-                    hebrewWord: null,
-                  ));
-                }
+                words.add(WordItem(
+                  englishWord: english,
+                  hebrewWord: hebrew,
+                ));
               }
             }
           }

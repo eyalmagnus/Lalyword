@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'screens/splash_screen.dart';
+import 'config/app_theme.dart';
 
 void main() {
   runApp(
@@ -15,19 +16,9 @@ class LalyApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Watch settings to decide initial route
-    // However, build should be synchronous. We use a FutureBuilder or just default to home wrapper.
-    
     return MaterialApp(
       title: 'LalyWord',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF6750A4), // Deep Purple
-          brightness: Brightness.dark,
-        ),
-        useMaterial3: true,
-        fontFamily: 'Roboto', 
-      ),
+      theme: AppTheme.theme,
       home: const SplashScreen(),
     );
   }
