@@ -101,6 +101,16 @@ class _SplashScreenState extends State<SplashScreen> {
     }
   }
 
+  void _skipVideo() {
+    if (_hasNavigated || !mounted) {
+      return;
+    }
+    _hasNavigated = true;
+    _completionTimer?.cancel();
+    _controller?.pause();
+    _navigateToHome();
+  }
+
   void _navigateToHome() {
     print('_navigateToHome called. Has navigated: $_hasNavigated, mounted: $mounted');
     if (!mounted) {
@@ -124,27 +134,30 @@ class _SplashScreenState extends State<SplashScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      body: Center(
-        child: _hasError
-            ? const Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.play_circle_outline, size: 64, color: Colors.white),
-                  SizedBox(height: 16),
-                  Text(
-                    'Loading...',
-                    style: TextStyle(color: Colors.white),
-                  ),
-                ],
-              )
-            : _isInitialized && _controller != null
-                ? AspectRatio(
-                    aspectRatio: _controller!.value.aspectRatio,
-                    child: VideoPlayer(_controller!),
-                  )
-                : const CircularProgressIndicator(
-                    color: Colors.white,
-                  ),
+      body: GestureDetector(
+        onTap: _skipVideo,
+        child: Center(
+          child: _hasError
+              ? const Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.play_circle_outline, size: 64, color: Colors.white),
+                    SizedBox(height: 16),
+                    Text(
+                      'Loading...',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ],
+                )
+              : _isInitialized && _controller != null
+                  ? AspectRatio(
+                      aspectRatio: _controller!.value.aspectRatio,
+                      child: VideoPlayer(_controller!),
+                    )
+                  : const CircularProgressIndicator(
+                      color: Colors.white,
+                    ),
+        ),
       ),
     );
   }

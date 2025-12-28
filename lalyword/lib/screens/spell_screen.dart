@@ -525,11 +525,12 @@ class _SpellContentState extends ConsumerState<SpellContent> {
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
         child: LayoutBuilder(
           builder: (context, constraints) {
-            final cardHeight = constraints.maxHeight * 0.85;
+            final cardHeight = constraints.maxHeight * 0.75;
+            final cardWidth = constraints.maxWidth;
             return Center(
               child: SizedBox(
                 height: cardHeight,
-                width: double.infinity,
+                width: cardWidth,
                 child: Container(
                   decoration: BoxDecoration(
                     color: AppTheme.pureWhite,
@@ -544,12 +545,13 @@ class _SpellContentState extends ConsumerState<SpellContent> {
                   ),
                   child: Stack(
                     children: [
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 24.0),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
+                      SingleChildScrollView(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 24.0),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
                             const SizedBox(height: 48),
                             if (_isFlipped) ...[
                               Text(
@@ -768,8 +770,8 @@ class _SpellContentState extends ConsumerState<SpellContent> {
                               padding: const EdgeInsets.symmetric(vertical: 16.0),
                               child: IconButton(
                                 icon: const Icon(Icons.expand_more_rounded, color: AppTheme.softGrey),
-                                onPressed: widget.onPrev,
-                                tooltip: 'Previous word',
+                                onPressed: widget.onNext,
+                                tooltip: 'Next word',
                               ),
                             ),
                             const Text(
@@ -780,9 +782,11 @@ class _SpellContentState extends ConsumerState<SpellContent> {
                               'Swipe Left/Right to Flip',
                               style: TextStyle(color: AppTheme.softGrey, fontSize: 12),
                             ),
+                            const SizedBox(height: 16),
                           ],
                         ),
                       ),
+                    ),
                       Positioned(
                         top: 8,
                         left: 0,
@@ -790,8 +794,8 @@ class _SpellContentState extends ConsumerState<SpellContent> {
                         child: Center(
                           child: IconButton(
                             icon: const Icon(Icons.expand_less_rounded, color: AppTheme.softGrey),
-                            onPressed: widget.onNext,
-                            tooltip: 'Next word',
+                            onPressed: widget.onPrev,
+                            tooltip: 'Previous word',
                           ),
                         ),
                       ),

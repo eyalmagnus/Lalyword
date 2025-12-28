@@ -354,30 +354,38 @@ class _FlashcardContentState extends ConsumerState<FlashcardContent> {
             ],
           ),
         ),
-        alignment: Alignment.center,
         padding: const EdgeInsets.all(24),
-        child: AspectRatio(
-          aspectRatio: 0.7,
-          child: Container(
-            decoration: BoxDecoration(
-              color: AppTheme.pureWhite,
-              borderRadius: BorderRadius.circular(24),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 20,
-                  offset: const Offset(0, 10),
-                ),
-              ],
-            ),
-            child: Stack(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(32.0),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final cardHeight = constraints.maxHeight * 0.75;
+            final cardWidth = constraints.maxWidth;
+            return Center(
+              child: SizedBox(
+                height: cardHeight,
+                width: cardWidth,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: AppTheme.pureWhite,
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 20,
+                        offset: const Offset(0, 10),
+                      ),
+                    ],
+                  ),
+                  child: Stack(
                     children: [
-                      const SizedBox(height: 48),
+                      SingleChildScrollView(
+                        padding: const EdgeInsets.only(bottom: 16.0),
+                        child: Padding(
+                          padding: const EdgeInsets.all(32.0),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const SizedBox(height: 48),
                       if (_isFlipped) ...[
                           Text(
                             widget.word.hebrewWord ?? 'Translating...',
@@ -504,22 +512,39 @@ class _FlashcardContentState extends ConsumerState<FlashcardContent> {
                           Padding(
                             padding: const EdgeInsets.only(top: 16.0),
                             child: Column(
+                              mainAxisSize: MainAxisSize.min,
                               children: [
                                 if (widget.word.phonetic != null)
-                                  Text(
-                                    widget.word.phonetic!,
-                                    style: TextStyle(color: AppTheme.softGrey, fontStyle: FontStyle.italic),
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                                    child: Text(
+                                      widget.word.phonetic!,
+                                      style: TextStyle(color: AppTheme.softGrey, fontStyle: FontStyle.italic),
+                                      textAlign: TextAlign.center,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
                                   ),
                                 if (widget.word.originalWord != null)
                                   Padding(
-                                    padding: EdgeInsets.only(top: widget.word.phonetic != null ? 8.0 : 0.0),
-                                    child: Text(
-                                      widget.word.originalWord!.toLowerCase().startsWith('to ')
-                                          ? '(to) ${widget.word.originalWord!.substring(3)}'
-                                          : widget.word.originalWord!.toLowerCase().endsWith(' to') && widget.word.originalWord!.length > 4
-                                              ? '${widget.word.originalWord!.substring(0, widget.word.originalWord!.length - 3)} {to}'
-                                              : widget.word.originalWord!,
-                                      style: TextStyle(color: AppTheme.studyOrange),
+                                    padding: EdgeInsets.only(
+                                      top: widget.word.phonetic != null ? 8.0 : 0.0,
+                                      left: 8.0,
+                                      right: 8.0,
+                                    ),
+                                    child: FittedBox(
+                                      fit: BoxFit.scaleDown,
+                                      child: Text(
+                                        widget.word.originalWord!.toLowerCase().startsWith('to ')
+                                            ? '(to) ${widget.word.originalWord!.substring(3)}'
+                                            : widget.word.originalWord!.toLowerCase().endsWith(' to') && widget.word.originalWord!.length > 4
+                                                ? '${widget.word.originalWord!.substring(0, widget.word.originalWord!.length - 3)} {to}'
+                                                : widget.word.originalWord!,
+                                        style: TextStyle(color: AppTheme.studyOrange),
+                                        textAlign: TextAlign.center,
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
                                     ),
                                   ),
                               ],
@@ -527,11 +552,11 @@ class _FlashcardContentState extends ConsumerState<FlashcardContent> {
                           ),
                       ],
                       
-                      const Spacer(),
+                      const SizedBox(height: 20),
                       
                       if (widget.onToggleKnown != null)
                         Padding(
-                          padding: const EdgeInsets.only(bottom: 16.0),
+                          padding: const EdgeInsets.only(bottom: 12.0),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
@@ -539,11 +564,16 @@ class _FlashcardContentState extends ConsumerState<FlashcardContent> {
                                 value: widget.isKnown,
                                 onChanged: (_) => widget.onToggleKnown!(),
                               ),
-                              Text(
-                                'I know this word',
-                                style: widget.isKnown
-                                    ? const TextStyle(color: AppTheme.primaryGreen, fontWeight: FontWeight.bold)
-                                    : const TextStyle(color: AppTheme.darkGrey),
+                              Flexible(
+                                child: Text(
+                                  'I know this word',
+                                  style: widget.isKnown
+                                      ? const TextStyle(color: AppTheme.primaryGreen, fontWeight: FontWeight.bold)
+                                      : const TextStyle(color: AppTheme.darkGrey),
+                                  textAlign: TextAlign.center,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               ),
                               if (widget.isKnown)
                                 const Padding(
@@ -555,74 +585,79 @@ class _FlashcardContentState extends ConsumerState<FlashcardContent> {
                         ),
                       
                       Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 16.0),
+                        padding: const EdgeInsets.symmetric(vertical: 12.0),
                         child: IconButton(
                           icon: const Icon(Icons.expand_more_rounded, color: AppTheme.softGrey),
-                          onPressed: widget.onPrev,
-                          tooltip: 'Previous word',
+                          onPressed: widget.onNext,
+                          tooltip: 'Next word',
                         ),
                       ),
+                      const SizedBox(height: 4),
+                      Text('Swipe Up/Down for Next/Prev', style: TextStyle(color: AppTheme.softGrey, fontSize: 12)),
+                      Text('Swipe Left/Right to Flip', style: TextStyle(color: AppTheme.softGrey, fontSize: 12)),
                       const SizedBox(height: 8),
-                      Text('Swipe Up/Down for Next/Prev', style: TextStyle(color: AppTheme.softGrey)),
-                      Text('Swipe Left/Right to Flip', style: TextStyle(color: AppTheme.softGrey)),
+                            ],
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        top: 8,
+                        left: 0,
+                        right: 0,
+                        child: Center(
+                          child: IconButton(
+                            icon: const Icon(Icons.expand_less_rounded, color: AppTheme.softGrey),
+                            onPressed: widget.onPrev,
+                            tooltip: 'Previous word',
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        left: 8,
+                        top: 0,
+                        bottom: 0,
+                        child: Center(
+                          child: IconButton(
+                            icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppTheme.softGrey),
+                            onPressed: () {
+                              setState(() {
+                                final wasFlipped = _isFlipped;
+                                _isFlipped = !_isFlipped;
+                                if (!wasFlipped && _isFlipped) {
+                                  _trackHebrewShown();
+                                }
+                              });
+                            },
+                            tooltip: 'Flip card',
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        right: 8,
+                        top: 0,
+                        bottom: 0,
+                        child: Center(
+                          child: IconButton(
+                            icon: const Icon(Icons.arrow_forward_ios_rounded, color: AppTheme.softGrey),
+                            onPressed: () {
+                              setState(() {
+                                final wasFlipped = _isFlipped;
+                                _isFlipped = !_isFlipped;
+                                if (!wasFlipped && _isFlipped) {
+                                  _trackHebrewShown();
+                                }
+                              });
+                            },
+                            tooltip: 'Flip card',
+                          ),
+                        ),
+                      ),
                     ],
-                  ),
-                ),
-                Positioned(
-                  top: 8,
-                  left: 0,
-                  right: 0,
-                  child: Center(
-                    child: IconButton(
-                      icon: const Icon(Icons.expand_less_rounded, color: AppTheme.softGrey),
-                      onPressed: widget.onNext,
-                      tooltip: 'Next word',
-                    ),
-                  ),
-                ),
-                Positioned(
-                  left: 8,
-                  top: 0,
-                  bottom: 0,
-                  child: Center(
-                    child: IconButton(
-                      icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppTheme.softGrey),
-                      onPressed: () {
-                        setState(() {
-                          final wasFlipped = _isFlipped;
-                          _isFlipped = !_isFlipped;
-                          if (!wasFlipped && _isFlipped) {
-                            _trackHebrewShown();
-                          }
-                        });
-                      },
-                      tooltip: 'Flip card',
-                    ),
-                  ),
-                ),
-                Positioned(
-                  right: 8,
-                  top: 0,
-                  bottom: 0,
-                  child: Center(
-                    child: IconButton(
-                      icon: const Icon(Icons.arrow_forward_ios_rounded, color: AppTheme.softGrey),
-                      onPressed: () {
-                        setState(() {
-                          final wasFlipped = _isFlipped;
-                          _isFlipped = !_isFlipped;
-                          if (!wasFlipped && _isFlipped) {
-                            _trackHebrewShown();
-                          }
-                        });
-                      },
-                      tooltip: 'Flip card',
-                    ),
-                  ),
-                ),
-              ],
             ),
           ),
+        ),
+      );
+          },
         ),
       ),
     );
