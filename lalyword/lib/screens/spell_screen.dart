@@ -740,7 +740,7 @@ class _SpellContentState extends ConsumerState<SpellContent> {
                                 AppTheme.gradientButton(
                                   text: 'Check',
                                   onPressed: (widget.textController.text.trim().isEmpty || _isCorrect == true) 
-                                      ? () {} 
+                                      ? null 
                                       : _checkSpelling,
                                   gradient: (widget.textController.text.trim().isEmpty || _isCorrect == true)
                                       ? LinearGradient(colors: [AppTheme.softGrey, AppTheme.softGrey])

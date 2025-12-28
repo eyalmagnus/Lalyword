@@ -110,7 +110,7 @@ class AppTheme {
   // Custom Button Styles
   static Widget gradientButton({
     required String text,
-    required VoidCallback onPressed,
+    VoidCallback? onPressed,
     required LinearGradient gradient,
     IconData? icon,
     double? width,
