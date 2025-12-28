@@ -584,18 +584,7 @@ class _FlashcardContentState extends ConsumerState<FlashcardContent> {
                           ),
                         ),
                       
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 12.0),
-                        child: IconButton(
-                          icon: const Icon(Icons.expand_more_rounded, color: AppTheme.softGrey),
-                          onPressed: widget.onNext,
-                          tooltip: 'Next word',
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text('Swipe Up/Down for Next/Prev', style: TextStyle(color: AppTheme.softGrey, fontSize: 12)),
-                      Text('Swipe Left/Right to Flip', style: TextStyle(color: AppTheme.softGrey, fontSize: 12)),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 48),
                             ],
                           ),
                         ),
@@ -610,6 +599,24 @@ class _FlashcardContentState extends ConsumerState<FlashcardContent> {
                             onPressed: widget.onPrev,
                             tooltip: 'Previous word',
                           ),
+                        ),
+                      ),
+                      Positioned(
+                        bottom: 8,
+                        left: 0,
+                        right: 0,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text('Swipe Up/Down for Next/Prev', style: TextStyle(color: AppTheme.softGrey, fontSize: 12)),
+                            Text('Swipe Left/Right to Flip', style: TextStyle(color: AppTheme.softGrey, fontSize: 12)),
+                            const SizedBox(height: 4),
+                            IconButton(
+                              icon: const Icon(Icons.expand_more_rounded, color: AppTheme.softGrey),
+                              onPressed: widget.onNext,
+                              tooltip: 'Next word',
+                            ),
+                          ],
                         ),
                       ),
                       Positioned(

@@ -764,25 +764,7 @@ class _SpellContentState extends ConsumerState<SpellContent> {
                                   ),
                                 ),
                             ],
-                            const SizedBox(height: 12),
-                            
-                            Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 16.0),
-                              child: IconButton(
-                                icon: const Icon(Icons.expand_more_rounded, color: AppTheme.softGrey),
-                                onPressed: widget.onNext,
-                                tooltip: 'Next word',
-                              ),
-                            ),
-                            const Text(
-                              'Swipe Up/Down for Next/Prev',
-                              style: TextStyle(color: AppTheme.softGrey, fontSize: 12),
-                            ),
-                            const Text(
-                              'Swipe Left/Right to Flip',
-                              style: TextStyle(color: AppTheme.softGrey, fontSize: 12),
-                            ),
-                            const SizedBox(height: 16),
+                            const SizedBox(height: 48),
                           ],
                         ),
                       ),
@@ -797,6 +779,30 @@ class _SpellContentState extends ConsumerState<SpellContent> {
                             onPressed: widget.onPrev,
                             tooltip: 'Previous word',
                           ),
+                        ),
+                      ),
+                      Positioned(
+                        bottom: 8,
+                        left: 0,
+                        right: 0,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Text(
+                              'Swipe Up/Down for Next/Prev',
+                              style: TextStyle(color: AppTheme.softGrey, fontSize: 12),
+                            ),
+                            const Text(
+                              'Swipe Left/Right to Flip',
+                              style: TextStyle(color: AppTheme.softGrey, fontSize: 12),
+                            ),
+                            const SizedBox(height: 4),
+                            IconButton(
+                              icon: const Icon(Icons.expand_more_rounded, color: AppTheme.softGrey),
+                              onPressed: widget.onNext,
+                              tooltip: 'Next word',
+                            ),
+                          ],
                         ),
                       ),
                       Positioned(
