@@ -547,13 +547,13 @@ class _SpellContentState extends ConsumerState<SpellContent> {
                     children: [
                       SingleChildScrollView(
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 24.0),
+                          padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 16.0),
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               if (_isFlipped) ...[
-                                const SizedBox(height: 80),
+                                const SizedBox(height: 60),
                                 Center(
                                   child: Column(
                                     mainAxisSize: MainAxisSize.min,
@@ -570,7 +570,7 @@ class _SpellContentState extends ConsumerState<SpellContent> {
                                         ),
                                         textAlign: TextAlign.center,
                                       ),
-                                      const SizedBox(height: 16),
+                                      const SizedBox(height: 12),
                                       Text(
                                         '(Swipe to flip back)',
                                         style: TextStyle(color: AppTheme.softGrey),
@@ -578,9 +578,9 @@ class _SpellContentState extends ConsumerState<SpellContent> {
                                     ],
                                   ),
                                 ),
-                                const SizedBox(height: 80),
+                                const SizedBox(height: 60),
                               ] else ...[
-                                const SizedBox(height: 48),
+                                const SizedBox(height: 32),
                               Text(
                                 widget.word.hebrewWord ?? 'Translating...',
                                 style: widget.word.hebrewWord == null || widget.word.hebrewWord!.isEmpty
@@ -598,7 +598,7 @@ class _SpellContentState extends ConsumerState<SpellContent> {
                                     : TextDirection.ltr,
                               ),
                               
-                              SizedBox(height: _isCorrect == false ? 20 : 28),
+                              SizedBox(height: _isCorrect == false ? 16 : 20),
                               
                               if (_enriching)
                                 const SizedBox(
@@ -626,14 +626,14 @@ class _SpellContentState extends ConsumerState<SpellContent> {
                                           : null,
                                       customBorder: const CircleBorder(),
                                       child: Container(
-                                        padding: const EdgeInsets.all(16),
-                                        child: const Icon(Icons.volume_up, size: 32, color: AppTheme.pureWhite),
+                                        padding: const EdgeInsets.all(14),
+                                        child: const Icon(Icons.volume_up, size: 28, color: AppTheme.pureWhite),
                                       ),
                                     ),
                                   ),
                                 ),
                               
-                              SizedBox(height: _isCorrect == false ? 20 : 28),
+                              SizedBox(height: _isCorrect == false ? 16 : 20),
                               
                               TextField(
                                 controller: widget.textController,
@@ -689,7 +689,7 @@ class _SpellContentState extends ConsumerState<SpellContent> {
                                   ),
                                   contentPadding: const EdgeInsets.symmetric(
                                     horizontal: 16,
-                                    vertical: 16,
+                                    vertical: 12,
                                   ),
                                 ),
                                 inputFormatters: [
@@ -710,23 +710,23 @@ class _SpellContentState extends ConsumerState<SpellContent> {
                               
                               if (_isCorrect == false && _lastCheckedText != null)
                                 Padding(
-                                  padding: const EdgeInsets.only(top: 12.0, left: 8.0, right: 8.0),
+                                  padding: const EdgeInsets.only(top: 8.0, left: 8.0, right: 8.0),
                                   child: _buildLetterFeedback(_lastCheckedText!, widget.word.englishWord.toLowerCase()),
                                 ),
                               
                               if (_isCorrect == true)
                                 Padding(
-                                  padding: const EdgeInsets.only(top: 12.0),
+                                  padding: const EdgeInsets.only(top: 8.0),
                                   child: Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: const [
-                                      Icon(Icons.check_circle, color: AppTheme.primaryGreen, size: 24),
-                                      SizedBox(width: 8),
+                                      Icon(Icons.check_circle, color: AppTheme.primaryGreen, size: 20),
+                                      SizedBox(width: 6),
                                       Text(
                                         'Correct!',
                                         style: TextStyle(
                                           color: AppTheme.primaryGreen,
-                                          fontSize: 18,
+                                          fontSize: 16,
                                           fontWeight: FontWeight.bold,
                                         ),
                                       ),
@@ -734,7 +734,7 @@ class _SpellContentState extends ConsumerState<SpellContent> {
                                   ),
                                 ),
                               
-                              SizedBox(height: _isCorrect == false ? 12 : 20),
+                              SizedBox(height: _isCorrect == false ? 8 : 12),
                               
                               if (!_isFlipped)
                                 AppTheme.gradientButton(
@@ -750,7 +750,7 @@ class _SpellContentState extends ConsumerState<SpellContent> {
                               
                               if (!_isFlipped)
                                 Padding(
-                                  padding: const EdgeInsets.only(top: 12.0),
+                                  padding: const EdgeInsets.only(top: 8.0),
                                   child: Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
@@ -773,7 +773,7 @@ class _SpellContentState extends ConsumerState<SpellContent> {
                                   ),
                                 ),
                             ],
-                            const SizedBox(height: 48),
+                            const SizedBox(height: 24),
                           ],
                         ),
                       ),
@@ -816,34 +816,28 @@ class _SpellContentState extends ConsumerState<SpellContent> {
                       ),
                       Positioned(
                         left: 8,
-                        top: 0,
-                        bottom: 0,
-                        child: Center(
-                          child: IconButton(
-                            icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppTheme.softGrey),
-                            onPressed: () {
-                              setState(() {
-                                _isFlipped = !_isFlipped;
-                              });
-                            },
-                            tooltip: 'Flip card',
-                          ),
+                        bottom: 120,
+                        child: IconButton(
+                          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppTheme.softGrey),
+                          onPressed: () {
+                            setState(() {
+                              _isFlipped = !_isFlipped;
+                            });
+                          },
+                          tooltip: 'Flip card',
                         ),
                       ),
                       Positioned(
                         right: 8,
-                        top: 0,
-                        bottom: 0,
-                        child: Center(
-                          child: IconButton(
-                            icon: const Icon(Icons.arrow_forward_ios_rounded, color: AppTheme.softGrey),
-                            onPressed: () {
-                              setState(() {
-                                _isFlipped = !_isFlipped;
-                              });
-                            },
-                            tooltip: 'Flip card',
-                          ),
+                        bottom: 120,
+                        child: IconButton(
+                          icon: const Icon(Icons.arrow_forward_ios_rounded, color: AppTheme.softGrey),
+                          onPressed: () {
+                            setState(() {
+                              _isFlipped = !_isFlipped;
+                            });
+                          },
+                          tooltip: 'Flip card',
                         ),
                       ),
                     ],
