@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/app_providers.dart';
+import '../config/app_theme.dart';
 import 'activity_screen.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -35,9 +36,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Settings Saved')),
+          SnackBar(
+            content: const Text('Settings Saved'),
+            backgroundColor: AppTheme.primaryGreen,
+          ),
         );
-        // Force re-init check
         ref.invalidate(sheetInitProvider);
       }
     }
@@ -46,7 +49,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Setup LalyWord')),
+      backgroundColor: AppTheme.lightGrey,
+      appBar: AppBar(
+        title: const Text('Setup LalyWord'),
+        backgroundColor: AppTheme.pureWhite,
+        foregroundColor: AppTheme.darkGrey,
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Form(
@@ -54,42 +62,70 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Google Sheet ID',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: _sheetIdController,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  hintText: '1ih-k_KL33t7AU_h6BChr9XChjqoGiT9SVfuL04nS1JA',
-                  helperText: 'Found in the URL of your public Google Sheet.\nMake sure the sheet is shared as "Anyone with the link can view".',
-                  helperMaxLines: 2,
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              gradient: AppTheme.orangeGradient,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Icon(Icons.cloud, color: AppTheme.pureWhite),
+                          ),
+                          const SizedBox(width: 16),
+                          const Expanded(
+                            child: Text(
+                              'Google Sheet ID',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: AppTheme.darkGrey,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _sheetIdController,
+                        decoration: const InputDecoration(
+                          hintText: '1ih-k_KL33t7AU_h6BChr9XChjqoGiT9SVfuL04nS1JA',
+                          helperText: 'Found in the URL of your public Google Sheet.\nMake sure the sheet is shared as "Anyone with the link can view".',
+                          helperMaxLines: 2,
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter Spreadsheet ID';
+                          }
+                          return null;
+                        },
+                      ),
+                    ],
+                  ),
                 ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter Spreadsheet ID';
-                  }
-                  return null;
-                },
               ),
-              const SizedBox(height: 30),
-
+              const SizedBox(height: 24),
+              
               SizedBox(
                 width: double.infinity,
-                height: 50,
-                child: FilledButton(
+                child: AppTheme.gradientButton(
+                  text: 'Save & Connect',
                   onPressed: _save,
-                  child: const Text('Save & Connect'),
+                  gradient: AppTheme.blueGradient,
+                  icon: Icons.save,
                 ),
               ),
               
-              const SizedBox(height: 30),
+              const SizedBox(height: 16),
               
               SizedBox(
                 width: double.infinity,
-                height: 50,
                 child: OutlinedButton.icon(
                   onPressed: () {
                     Navigator.push(
@@ -99,6 +135,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   },
                   icon: const Icon(Icons.analytics),
                   label: const Text('See Activity'),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    side: const BorderSide(color: AppTheme.primaryBlue, width: 2),
+                    foregroundColor: AppTheme.primaryBlue,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
                 ),
               ),
             ],

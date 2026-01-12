@@ -107,6 +107,16 @@ class _VideoTransitionScreenState extends State<VideoTransitionScreen> {
     }
   }
 
+  void _skipVideo() {
+    if (_hasNavigated || !mounted) {
+      return;
+    }
+    _hasNavigated = true;
+    _completionTimer?.cancel();
+    _controller?.pause();
+    _navigateToTarget();
+  }
+
   void _navigateToTarget() {
     print('_navigateToTarget called. Has navigated: $_hasNavigated, mounted: $mounted');
     if (!mounted) {
@@ -137,20 +147,23 @@ class _VideoTransitionScreenState extends State<VideoTransitionScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      body: Center(
-        child: _hasError
-            ? const Text(
-                'Loading...',
-                style: TextStyle(color: Colors.white),
-              )
-            : _isInitialized && _controller != null
-                ? AspectRatio(
-                    aspectRatio: _controller!.value.aspectRatio,
-                    child: VideoPlayer(_controller!),
-                  )
-                : const CircularProgressIndicator(
-                    color: Colors.white,
-                  ),
+      body: GestureDetector(
+        onTap: _skipVideo,
+        child: Center(
+          child: _hasError
+              ? const Text(
+                  'Loading...',
+                  style: TextStyle(color: Colors.white),
+                )
+              : _isInitialized && _controller != null
+                  ? AspectRatio(
+                      aspectRatio: _controller!.value.aspectRatio,
+                      child: VideoPlayer(_controller!),
+                    )
+                  : const CircularProgressIndicator(
+                      color: Colors.white,
+                    ),
+        ),
       ),
     );
   }

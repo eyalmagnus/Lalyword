@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/app_providers.dart';
 import '../models/word_item.dart';
+import '../config/app_theme.dart';
 
-// Helper class to represent list items (headers or words)
 class _ListItem {
   final bool isHeader;
   final String? listName;
@@ -24,8 +24,11 @@ class ActivityScreen extends ConsumerWidget {
     final activityAsync = ref.watch(activityDataProvider);
 
     return Scaffold(
+      backgroundColor: AppTheme.lightGrey,
       appBar: AppBar(
         title: const Text('See Activity'),
+        backgroundColor: AppTheme.pureWhite,
+        foregroundColor: AppTheme.darkGrey,
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -39,32 +42,42 @@ class ActivityScreen extends ConsumerWidget {
       body: activityAsync.when(
         data: (wordsByList) {
           if (wordsByList.isEmpty) {
-            return const Center(
+            return Center(
               child: Padding(
-                padding: EdgeInsets.all(16.0),
-                child: Text(
-                  'No activity data available.\n\nWords will appear here after you:\n• View word lists\n• Interact with flashcards\n\nTry selecting a word list and viewing some words first.',
-                  textAlign: TextAlign.center,
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        gradient: AppTheme.blueGradient,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.analytics_outlined, color: AppTheme.pureWhite, size: 48),
+                    ),
+                    const SizedBox(height: 24),
+                    Text(
+                      'No activity data available.\n\nWords will appear here after you:\n• View word lists\n• Interact with flashcards\n\nTry selecting a word list and viewing some words first.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: AppTheme.darkGrey),
+                    ),
+                  ],
                 ),
               ),
             );
           }
 
-          // Prepare list items: section headers + words, sorted alphabetically by list name
           final sortedListNames = wordsByList.keys.toList()
             ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
           
-          // Build a list of items: alternating section headers and words
           final List<_ListItem> items = [];
           for (final listName in sortedListNames) {
             final words = wordsByList[listName]!;
-            // Sort words alphabetically within each list
             final sortedWords = List<WordItem>.from(words)
               ..sort((a, b) => a.englishWord.toLowerCase().compareTo(b.englishWord.toLowerCase()));
             
-            // Add section header
             items.add(_ListItem(isHeader: true, listName: listName));
-            // Add words
             for (final word in sortedWords) {
               items.add(_ListItem(isHeader: false, word: word));
             }
@@ -72,12 +85,19 @@ class ActivityScreen extends ConsumerWidget {
 
           return Column(
             children: [
-              // Sticky header
               Container(
-                color: Theme.of(context).colorScheme.surface,
+                decoration: BoxDecoration(
+                  color: AppTheme.pureWhite,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
                 child: _buildHeaderRow(context),
               ),
-              // Table rows with section headers
               Expanded(
                 child: ListView.builder(
                   itemCount: items.length,
@@ -94,25 +114,36 @@ class ActivityScreen extends ConsumerWidget {
             ],
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => Center(
+          child: CircularProgressIndicator(color: AppTheme.primaryBlue),
+        ),
         error: (error, stack) => Center(
           child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    gradient: AppTheme.orangeGradient,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.error_outline, size: 48, color: AppTheme.pureWhite),
+                ),
                 const SizedBox(height: 16),
                 Text(
                   'Error loading activity: $error',
                   textAlign: TextAlign.center,
+                  style: const TextStyle(color: AppTheme.darkGrey),
                 ),
                 const SizedBox(height: 16),
-                ElevatedButton(
+                AppTheme.gradientButton(
+                  text: 'Retry',
                   onPressed: () {
                     ref.invalidate(activityDataProvider);
                   },
-                  child: const Text('Retry'),
+                  gradient: AppTheme.blueGradient,
                 ),
               ],
             ),
@@ -125,33 +156,31 @@ class ActivityScreen extends ConsumerWidget {
   Widget _buildHeaderRow(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.primaryContainer,
+        gradient: AppTheme.blueGradient,
         border: Border(
           bottom: BorderSide(
-            color: Theme.of(context).dividerColor,
+            color: AppTheme.softGrey,
             width: 2,
           ),
         ),
       ),
-      child: Row(
-        children: [
-          Expanded(
-            flex: 20,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 6.0, vertical: 8.0),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 6.0, vertical: 12.0),
+        child: Row(
+          children: [
+            Expanded(
+              flex: 20,
               child: const Text(
                 'Word',
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
+                  color: AppTheme.pureWhite,
                 ),
               ),
             ),
-          ),
-          Expanded(
-            flex: 12,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 8.0),
+            Expanded(
+              flex: 12,
               child: FittedBox(
                 fit: BoxFit.scaleDown,
                 child: const Text(
@@ -159,16 +188,14 @@ class ActivityScreen extends ConsumerWidget {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
+                    color: AppTheme.pureWhite,
                   ),
                   textAlign: TextAlign.center,
                 ),
               ),
             ),
-          ),
-          Expanded(
-            flex: 12,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 8.0),
+            Expanded(
+              flex: 12,
               child: FittedBox(
                 fit: BoxFit.scaleDown,
                 child: const Text(
@@ -176,16 +203,14 @@ class ActivityScreen extends ConsumerWidget {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
+                    color: AppTheme.pureWhite,
                   ),
                   textAlign: TextAlign.center,
                 ),
               ),
             ),
-          ),
-          Expanded(
-            flex: 13,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 8.0),
+            Expanded(
+              flex: 13,
               child: FittedBox(
                 fit: BoxFit.scaleDown,
                 child: const Text(
@@ -193,16 +218,14 @@ class ActivityScreen extends ConsumerWidget {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
+                    color: AppTheme.pureWhite,
                   ),
                   textAlign: TextAlign.center,
                 ),
               ),
             ),
-          ),
-          Expanded(
-            flex: 12,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 8.0),
+            Expanded(
+              flex: 12,
               child: FittedBox(
                 fit: BoxFit.scaleDown,
                 child: const Text(
@@ -210,16 +233,14 @@ class ActivityScreen extends ConsumerWidget {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
+                    color: AppTheme.pureWhite,
                   ),
                   textAlign: TextAlign.center,
                 ),
               ),
             ),
-          ),
-          Expanded(
-            flex: 12,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 8.0),
+            Expanded(
+              flex: 12,
               child: FittedBox(
                 fit: BoxFit.scaleDown,
                 child: const Text(
@@ -227,13 +248,14 @@ class ActivityScreen extends ConsumerWidget {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
+                    color: AppTheme.pureWhite,
                   ),
                   textAlign: TextAlign.center,
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -241,27 +263,34 @@ class ActivityScreen extends ConsumerWidget {
   Widget _buildSectionHeader(BuildContext context, String listName) {
     return Container(
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.secondaryContainer.withOpacity(0.3),
+        color: AppTheme.pureWhite,
         border: Border(
-          top: BorderSide(
-            color: Theme.of(context).dividerColor,
-            width: 2,
-          ),
-          bottom: BorderSide(
-            color: Theme.of(context).dividerColor,
-            width: 1,
-          ),
+          top: BorderSide(color: AppTheme.softGrey, width: 2),
+          bottom: BorderSide(color: AppTheme.softGrey, width: 1),
         ),
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-        child: Text(
-          listName,
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
+        child: Row(
+          children: [
+            Container(
+              width: 4,
+              height: 20,
+              decoration: BoxDecoration(
+                gradient: AppTheme.greenGradient,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              listName,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.darkGrey,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -270,83 +299,68 @@ class ActivityScreen extends ConsumerWidget {
   Widget _buildDataRow(BuildContext context, WordItem word) {
     return Container(
       decoration: BoxDecoration(
+        color: AppTheme.pureWhite,
         border: Border(
           bottom: BorderSide(
-            color: Theme.of(context).dividerColor.withOpacity(0.3),
+            color: AppTheme.softGrey.withOpacity(0.3),
             width: 1,
           ),
         ),
       ),
-      child: Row(
-        children: [
-          Expanded(
-            flex: 20,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 6.0, vertical: 8.0),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 6.0, vertical: 12.0),
+        child: Row(
+          children: [
+            Expanded(
+              flex: 20,
               child: Text(
                 word.englishWord,
-                style: const TextStyle(fontSize: 12),
+                style: const TextStyle(fontSize: 12, color: AppTheme.darkGrey),
               ),
             ),
-          ),
-          Expanded(
-            flex: 12,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 8.0),
+            Expanded(
+              flex: 12,
               child: Text(
                 '${word.timesShown}',
-                style: const TextStyle(fontSize: 12),
+                style: const TextStyle(fontSize: 12, color: AppTheme.darkGrey),
                 textAlign: TextAlign.center,
               ),
             ),
-          ),
-          Expanded(
-            flex: 12,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 8.0),
+            Expanded(
+              flex: 12,
               child: Text(
                 '${word.timesHeard}',
-                style: const TextStyle(fontSize: 12),
+                style: const TextStyle(fontSize: 12, color: AppTheme.darkGrey),
                 textAlign: TextAlign.center,
               ),
             ),
-          ),
-          Expanded(
-            flex: 13,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 8.0),
+            Expanded(
+              flex: 13,
               child: Text(
                 '${word.timesSyllablesShown}',
-                style: const TextStyle(fontSize: 12),
+                style: const TextStyle(fontSize: 12, color: AppTheme.darkGrey),
                 textAlign: TextAlign.center,
               ),
             ),
-          ),
-          Expanded(
-            flex: 12,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 8.0),
+            Expanded(
+              flex: 12,
               child: Text(
                 '${word.timesHebrewShown}',
-                style: const TextStyle(fontSize: 12),
+                style: const TextStyle(fontSize: 12, color: AppTheme.darkGrey),
                 textAlign: TextAlign.center,
               ),
             ),
-          ),
-          Expanded(
-            flex: 12,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 8.0),
+            Expanded(
+              flex: 12,
               child: Text(
                 '${word.timesSpellChecked}',
-                style: const TextStyle(fontSize: 12),
+                style: const TextStyle(fontSize: 12, color: AppTheme.darkGrey),
                 textAlign: TextAlign.center,
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 }
-

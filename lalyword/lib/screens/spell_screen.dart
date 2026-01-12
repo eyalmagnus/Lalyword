@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:audioplayers/audioplayers.dart';
 import '../providers/app_providers.dart';
 import '../models/word_item.dart';
+import '../config/app_theme.dart';
 
 class SpellScreen extends ConsumerStatefulWidget {
   const SpellScreen({super.key});
@@ -54,15 +55,28 @@ class _SpellScreenState extends ConsumerState<SpellScreen> {
     final currentWord = notifier.currentWord;
 
     if (_isLoading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+      return Scaffold(
+        backgroundColor: AppTheme.lightGrey,
+        body: Center(
+          child: CircularProgressIndicator(color: AppTheme.primaryBlue),
+        ),
       );
     }
 
     if (session.isEmpty || currentWord == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Empty List')),
-        body: const Center(child: Text('No words in this list.')),
+        backgroundColor: AppTheme.lightGrey,
+        appBar: AppBar(
+          title: const Text('Empty List'),
+          backgroundColor: AppTheme.pureWhite,
+          foregroundColor: AppTheme.darkGrey,
+        ),
+        body: Center(
+          child: Text(
+            'No words in this list.',
+            style: TextStyle(color: AppTheme.darkGrey),
+          ),
+        ),
       );
     }
 
@@ -72,11 +86,13 @@ class _SpellScreenState extends ConsumerState<SpellScreen> {
         : 'Word ${notifier.currentVisiblePosition} / ${notifier.visibleCount}';
     
     return Scaffold(
+      backgroundColor: AppTheme.lightGrey,
       appBar: AppBar(
+        backgroundColor: AppTheme.pureWhite,
+        foregroundColor: AppTheme.darkGrey,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () async {
-            // Skip warning if no words are marked as known
             final hasKnown = notifier.hasKnownWords;
             if (!hasKnown) {
               if (mounted) {
@@ -88,6 +104,10 @@ class _SpellScreenState extends ConsumerState<SpellScreen> {
             final confirmed = await showDialog<bool>(
               context: context,
               builder: (context) => AlertDialog(
+                backgroundColor: AppTheme.pureWhite,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
                 title: const Text('Exit?'),
                 content: const Text('Are you sure? This will reset all "I know this word" checkboxes and reshuffle the order.'),
                 actions: [
@@ -112,7 +132,6 @@ class _SpellScreenState extends ConsumerState<SpellScreen> {
           IconButton(
             icon: const Icon(Icons.shuffle),
             onPressed: () async {
-              // Skip warning if no words are marked as known
               final hasKnown = notifier.hasKnownWords;
               if (!hasKnown) {
                 if (mounted) {
@@ -128,6 +147,10 @@ class _SpellScreenState extends ConsumerState<SpellScreen> {
               final confirmed = await showDialog<bool>(
                 context: context,
                 builder: (context) => AlertDialog(
+                  backgroundColor: AppTheme.pureWhite,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                   title: const Text('Reshuffle words?'),
                   content: const Text('Are you sure? This will reset all "I know this word" checkboxes and reshuffle the order.'),
                   actions: [
@@ -209,16 +232,14 @@ class _SpellContentState extends ConsumerState<SpellContent> {
   final AudioPlayer _audioPlayer = AudioPlayer();
   bool _enriching = false;
   bool _isFlipped = false;
-  bool? _isCorrect; // null = not checked, true = correct, false = incorrect
-  String? _lastCheckedText; // Store the last checked text for highlighting
+  bool? _isCorrect;
+  String? _lastCheckedText;
   
   @override
   void initState() {
     super.initState();
     _checkEnrichment();
-    // Listen to text changes to enable/disable check button
     widget.textController.addListener(_onTextChanged);
-    // Request focus after the widget is built
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         widget.focusNode.requestFocus();
@@ -227,7 +248,6 @@ class _SpellContentState extends ConsumerState<SpellContent> {
   }
   
   void _onTextChanged() {
-    // Update state when text changes to rebuild button
     if (mounted) {
       setState(() {});
     }
@@ -243,8 +263,8 @@ class _SpellContentState extends ConsumerState<SpellContent> {
       });
       setState(() {
         _enriching = false;
-        _isFlipped = false; // Reset flip state when word changes
-        _isCorrect = null; // Reset check state
+        _isFlipped = false;
+        _isCorrect = null;
         _lastCheckedText = null;
       });
       _checkEnrichment();
@@ -261,7 +281,6 @@ class _SpellContentState extends ConsumerState<SpellContent> {
   Future<void> _checkEnrichment() async {
     if (_enriching) return;
     
-    // Check if we need to enrich (missing audio/syllables or missing translation)
     bool needsDictionary = widget.word.audioUrl == null || 
                           widget.word.audioUrl!.isEmpty ||
                           widget.word.syllables == null || 
@@ -275,13 +294,11 @@ class _SpellContentState extends ConsumerState<SpellContent> {
 
     WordItem updated = widget.word;
 
-    // 1. Dictionary
     if (needsDictionary) {
       final dictService = ref.read(dictionaryServiceProvider);
       updated = await dictService.enrichWord(updated);
     }
 
-    // 2. Translation (important for spell screen as Hebrew is shown at top)
     if (updated.hebrewWord == null || updated.hebrewWord!.isEmpty) {
       final transService = ref.read(translationServiceProvider);
       final rawDetails = await transService.translate(updated.englishWord);
@@ -300,32 +317,34 @@ class _SpellContentState extends ConsumerState<SpellContent> {
     if (widget.word.audioUrl != null && widget.word.audioUrl!.isNotEmpty) {
       try {
         await _audioPlayer.play(UrlSource(widget.word.audioUrl!));
-        // Track that sound was heard
         _trackSoundHeard();
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error playing audio: $e')),
+          SnackBar(
+            content: Text('Error playing audio: $e'),
+            backgroundColor: AppTheme.studyOrange,
+          ),
         );
       }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No audio available')),
+        SnackBar(
+          content: const Text('No audio available'),
+          backgroundColor: AppTheme.softGrey,
+        ),
       );
     }
   }
 
   void _handleVerticalDrag(DragEndDetails details) {
     if (details.primaryVelocity! < 0) {
-      // Swipe Up -> Next
       widget.onNext();
     } else if (details.primaryVelocity! > 0) {
-      // Swipe Down -> Prev
       widget.onPrev();
     }
   }
 
   void _handleHorizontalDrag(DragEndDetails details) {
-    // Swipe Left/Right -> Flip
     setState(() {
       _isFlipped = !_isFlipped;
     });
@@ -336,7 +355,7 @@ class _SpellContentState extends ConsumerState<SpellContent> {
     final correctWord = widget.word.englishWord.toLowerCase();
     
     if (typedText.isEmpty) {
-      return; // Don't check empty input
+      return;
     }
     
     setState(() {
@@ -344,91 +363,70 @@ class _SpellContentState extends ConsumerState<SpellContent> {
       _isCorrect = typedText == correctWord;
       
       if (_isCorrect == true) {
-        // Mark as known when correct
         widget.onMarkKnown();
       }
     });
     
-    // Track spelling check activity
     _trackSpellChecked();
   }
   
   Future<void> _trackSoundHeard() async {
-    // Get the current word from the session
     final notifier = ref.read(sessionProvider.notifier);
     final currentWord = notifier.currentWord;
     
     if (currentWord == null) return;
     
     final storageService = ref.read(storageServiceProvider);
-    
-    // Load the latest word from storage to ensure we have the most recent activity data
     final allWords = await storageService.getAllWordsWithActivity();
     final storedWord = allWords.firstWhere(
       (w) => w.englishWord.toLowerCase() == currentWord.englishWord.toLowerCase(),
       orElse: () => currentWord,
     );
     
-    // Use the stored word's count if available, otherwise use current word's count
     final currentCount = storedWord.timesHeard;
     final newCount = currentCount + 1;
     
-    // Create updated word with incremented count, preserving display data from current word
-    // This ensures Hebrew, audio, syllables etc. don't disappear
     final updated = currentWord.copyWith(
       timesHeard: newCount,
-      // Preserve other activity counts from stored word if they're higher
       timesShown: storedWord.timesShown > currentWord.timesShown ? storedWord.timesShown : currentWord.timesShown,
       timesSpellChecked: storedWord.timesSpellChecked > currentWord.timesSpellChecked ? storedWord.timesSpellChecked : currentWord.timesSpellChecked,
       timesSyllablesShown: storedWord.timesSyllablesShown > currentWord.timesSyllablesShown ? storedWord.timesSyllablesShown : currentWord.timesSyllablesShown,
       timesHebrewShown: storedWord.timesHebrewShown > currentWord.timesHebrewShown ? storedWord.timesHebrewShown : currentWord.timesHebrewShown,
     );
     await storageService.updateWordActivity(updated);
-    
-    // Also update in session - this preserves all display data (Hebrew, audio, etc.)
     widget.onEnrich(updated);
   }
 
   Future<void> _trackSpellChecked() async {
-    // Get the current word from the session
     final notifier = ref.read(sessionProvider.notifier);
     final currentWord = notifier.currentWord;
     
     if (currentWord == null) return;
     
     final storageService = ref.read(storageServiceProvider);
-    
-    // Load the latest word from storage to ensure we have the most recent activity data
     final allWords = await storageService.getAllWordsWithActivity();
     final storedWord = allWords.firstWhere(
       (w) => w.englishWord.toLowerCase() == currentWord.englishWord.toLowerCase(),
       orElse: () => currentWord,
     );
     
-    // Use the stored word's count if available, otherwise use current word's count
     final currentCount = storedWord.timesSpellChecked;
     final newCount = currentCount + 1;
     
-    // Create updated word with incremented count, preserving display data from current word
-    // This ensures Hebrew, audio, syllables etc. don't disappear
     final updated = currentWord.copyWith(
       timesSpellChecked: newCount,
-      // Preserve other activity counts from stored word if they're higher
       timesShown: storedWord.timesShown > currentWord.timesShown ? storedWord.timesShown : currentWord.timesShown,
       timesHeard: storedWord.timesHeard > currentWord.timesHeard ? storedWord.timesHeard : currentWord.timesHeard,
       timesSyllablesShown: storedWord.timesSyllablesShown > currentWord.timesSyllablesShown ? storedWord.timesSyllablesShown : currentWord.timesSyllablesShown,
       timesHebrewShown: storedWord.timesHebrewShown > currentWord.timesHebrewShown ? storedWord.timesHebrewShown : currentWord.timesHebrewShown,
     );
     await storageService.updateWordActivity(updated);
-    
-    // Also update in session - this preserves all display data (Hebrew, audio, etc.)
     widget.onEnrich(updated);
   }
 
   Widget _buildLetterFeedback(String typedText, String correctWord) {
     final List<Widget> letterWidgets = [];
     
-    // Calculate size based on word length to fit up to 15 letters
     final maxWordLength = correctWord.length > typedText.length ? correctWord.length : typedText.length;
     final fontSize = maxWordLength > 12 ? 12.0 : maxWordLength > 10 ? 13.0 : 14.0;
     final horizontalPadding = maxWordLength > 12 ? 3.0 : maxWordLength > 10 ? 4.0 : 5.0;
@@ -438,20 +436,19 @@ class _SpellContentState extends ConsumerState<SpellContent> {
     
     for (int i = 0; i < typedText.length; i++) {
       if (i < correctWord.length && typedText[i] == correctWord[i]) {
-        // Correct letter in correct position - green
         letterWidgets.add(
           Container(
             margin: EdgeInsets.symmetric(horizontal: horizontalMargin),
             padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: verticalPadding),
             decoration: BoxDecoration(
-              color: Colors.green.withOpacity(0.2),
-              border: Border.all(color: Colors.green, width: borderWidth),
+              color: AppTheme.primaryGreen.withOpacity(0.2),
+              border: Border.all(color: AppTheme.primaryGreen, width: borderWidth),
               borderRadius: BorderRadius.circular(4),
             ),
             child: Text(
               typedText[i],
               style: TextStyle(
-                color: Colors.green,
+                color: AppTheme.primaryGreen,
                 fontWeight: FontWeight.bold,
                 fontSize: fontSize,
               ),
@@ -459,20 +456,19 @@ class _SpellContentState extends ConsumerState<SpellContent> {
           ),
         );
       } else {
-        // Incorrect letter or position - red
         letterWidgets.add(
           Container(
             margin: EdgeInsets.symmetric(horizontal: horizontalMargin),
             padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: verticalPadding),
             decoration: BoxDecoration(
-              color: Colors.red.withOpacity(0.2),
-              border: Border.all(color: Colors.red, width: borderWidth),
+              color: AppTheme.studyOrange.withOpacity(0.2),
+              border: Border.all(color: AppTheme.studyOrange, width: borderWidth),
               borderRadius: BorderRadius.circular(4),
             ),
             child: Text(
               typedText[i],
               style: TextStyle(
-                color: Colors.red,
+                color: AppTheme.studyOrange,
                 fontWeight: FontWeight.bold,
                 fontSize: fontSize,
               ),
@@ -482,19 +478,18 @@ class _SpellContentState extends ConsumerState<SpellContent> {
       }
     }
     
-    // Add empty red containers for missing letters if typed text is shorter
     if (typedText.length < correctWord.length) {
       letterWidgets.add(
         Container(
           margin: EdgeInsets.symmetric(horizontal: horizontalMargin),
           padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: verticalPadding),
           decoration: BoxDecoration(
-            color: Colors.red.withOpacity(0.2),
-            border: Border.all(color: Colors.red, width: borderWidth),
+            color: AppTheme.studyOrange.withOpacity(0.2),
+            border: Border.all(color: AppTheme.studyOrange, width: borderWidth),
             borderRadius: BorderRadius.circular(4),
           ),
           child: SizedBox(
-            width: fontSize * 0.7, // Approximate width of a letter
+            width: fontSize * 0.7,
             height: fontSize * 1.2,
           ),
         ),
@@ -517,59 +512,85 @@ class _SpellContentState extends ConsumerState<SpellContent> {
       onHorizontalDragEnd: _handleHorizontalDrag,
       behavior: HitTestBehavior.translucent,
       child: Container(
-        color: Theme.of(context).colorScheme.surface,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              AppTheme.lightGrey,
+              AppTheme.pureWhite,
+            ],
+          ),
+        ),
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
         child: LayoutBuilder(
           builder: (context, constraints) {
-            // Use most of the screen height, leaving space for app bar and some padding
-            final cardHeight = constraints.maxHeight * 0.85;
+            final cardHeight = constraints.maxHeight * 0.75;
+            final cardWidth = constraints.maxWidth;
             return Center(
               child: SizedBox(
                 height: cardHeight,
-                width: double.infinity,
-                child: Card(
-                  elevation: 8,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                width: cardWidth,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: AppTheme.pureWhite,
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 20,
+                        offset: const Offset(0, 10),
+                      ),
+                    ],
+                  ),
                   child: Stack(
                     children: [
-                      // Main content
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 24.0),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            // Up button space at top
-                            const SizedBox(height: 48),
-                            if (_isFlipped) ...[
-                              // ENGLISH SIDE (flipped)
-                              Text(
-                                widget.word.englishWord.toLowerCase().startsWith('to ') && widget.word.englishWord.length > 3
-                                    ? '(to) ${widget.word.englishWord.substring(3)}'
-                                    : widget.word.englishWord.toLowerCase().endsWith(' to') && widget.word.englishWord.length > 4
-                                        ? '${widget.word.englishWord.substring(0, widget.word.englishWord.length - 3)} {to}'
-                                        : widget.word.englishWord,
-                                style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                                  fontWeight: FontWeight.bold,
+                      SingleChildScrollView(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 16.0),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (_isFlipped) ...[
+                                const SizedBox(height: 60),
+                                Center(
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        widget.word.englishWord.toLowerCase().startsWith('to ') && widget.word.englishWord.length > 3
+                                            ? '(to) ${widget.word.englishWord.substring(3)}'
+                                            : widget.word.englishWord.toLowerCase().endsWith(' to') && widget.word.englishWord.length > 4
+                                                ? '${widget.word.englishWord.substring(0, widget.word.englishWord.length - 3)} {to}'
+                                                : widget.word.englishWord,
+                                        style: Theme.of(context).textTheme.displayMedium?.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                          color: AppTheme.darkGrey,
+                                        ),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                      const SizedBox(height: 12),
+                                      Text(
+                                        '(Swipe to flip back)',
+                                        style: TextStyle(color: AppTheme.softGrey),
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                                textAlign: TextAlign.center,
-                              ),
-                              const SizedBox(height: 16),
-                              Text(
-                                '(Swipe to flip back)',
-                                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey),
-                              ),
-                            ] else ...[
-                              // HEBREW SIDE (default)
+                                const SizedBox(height: 60),
+                              ] else ...[
+                                const SizedBox(height: 32),
                               Text(
                                 widget.word.hebrewWord ?? 'Translating...',
                                 style: widget.word.hebrewWord == null || widget.word.hebrewWord!.isEmpty
                                     ? Theme.of(context).textTheme.bodyLarge?.copyWith(
                                         fontWeight: FontWeight.normal,
-                                        color: Colors.grey,
+                                        color: AppTheme.softGrey,
                                       )
                                     : Theme.of(context).textTheme.displayMedium?.copyWith(
                                         fontWeight: FontWeight.bold,
+                                        color: AppTheme.darkGrey,
                                       ),
                                 textAlign: TextAlign.center,
                                 textDirection: widget.word.hebrewWord != null && widget.word.hebrewWord!.isNotEmpty
@@ -577,26 +598,43 @@ class _SpellContentState extends ConsumerState<SpellContent> {
                                     : TextDirection.ltr,
                               ),
                               
-                              SizedBox(height: _isCorrect == false ? 20 : 28),
+                              SizedBox(height: _isCorrect == false ? 16 : 20),
                               
-                              // Sound button
                               if (_enriching)
                                 const SizedBox(
                                   width: 20, height: 20, 
-                                  child: CircularProgressIndicator(strokeWidth: 2)
+                                  child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primaryBlue)
                                 )
                               else
-                                IconButton.filled(
-                                  icon: const Icon(Icons.volume_up, size: 32),
-                                  onPressed: (widget.word.audioUrl != null && widget.word.audioUrl!.isNotEmpty)
-                                      ? _playSound
-                                      : null,
-                                  style: IconButton.styleFrom(padding: const EdgeInsets.all(16)),
+                                Container(
+                                  decoration: BoxDecoration(
+                                    gradient: AppTheme.blueGradient,
+                                    shape: BoxShape.circle,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: AppTheme.primaryBlue.withOpacity(0.3),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 4),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Material(
+                                    color: Colors.transparent,
+                                    child: InkWell(
+                                      onTap: (widget.word.audioUrl != null && widget.word.audioUrl!.isNotEmpty)
+                                          ? _playSound
+                                          : null,
+                                      customBorder: const CircleBorder(),
+                                      child: Container(
+                                        padding: const EdgeInsets.all(14),
+                                        child: const Icon(Icons.volume_up, size: 28, color: AppTheme.pureWhite),
+                                      ),
+                                    ),
+                                  ),
                                 ),
                               
-                              SizedBox(height: _isCorrect == false ? 20 : 28),
+                              SizedBox(height: _isCorrect == false ? 16 : 20),
                               
-                              // Text input field
                               TextField(
                                 controller: widget.textController,
                                 focusNode: widget.focusNode,
@@ -606,24 +644,24 @@ class _SpellContentState extends ConsumerState<SpellContent> {
                                 textCapitalization: TextCapitalization.none,
                                 autocorrect: false,
                                 enableSuggestions: false,
-                                enabled: _isCorrect != true, // Disable if correct
+                                enabled: _isCorrect != true,
                                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
                                   fontWeight: FontWeight.bold,
-                                  color: _isCorrect == true ? Colors.white : null,
+                                  color: _isCorrect == true ? AppTheme.pureWhite : AppTheme.darkGrey,
                                 ),
                                 textAlign: TextAlign.center,
                                 decoration: InputDecoration(
                                   hintText: _isCorrect == true ? 'Correct!' : 'Type the word...',
                                   filled: _isCorrect == true,
-                                  fillColor: _isCorrect == true ? Colors.green : null,
+                                  fillColor: _isCorrect == true ? AppTheme.primaryGreen : null,
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
                                     borderSide: BorderSide(
                                       color: _isCorrect == true 
-                                          ? Colors.green 
+                                          ? AppTheme.primaryGreen 
                                           : _isCorrect == false 
-                                              ? Colors.red 
-                                              : Theme.of(context).inputDecorationTheme.border?.borderSide.color ?? Colors.grey,
+                                              ? AppTheme.studyOrange 
+                                              : AppTheme.softGrey,
                                       width: _isCorrect != null ? 3 : 1,
                                     ),
                                   ),
@@ -631,10 +669,10 @@ class _SpellContentState extends ConsumerState<SpellContent> {
                                     borderRadius: BorderRadius.circular(12),
                                     borderSide: BorderSide(
                                       color: _isCorrect == true 
-                                          ? Colors.green 
+                                          ? AppTheme.primaryGreen 
                                           : _isCorrect == false 
-                                              ? Colors.red 
-                                              : Colors.grey,
+                                              ? AppTheme.studyOrange 
+                                              : AppTheme.softGrey,
                                       width: _isCorrect != null ? 3 : 1,
                                     ),
                                   ),
@@ -642,26 +680,25 @@ class _SpellContentState extends ConsumerState<SpellContent> {
                                     borderRadius: BorderRadius.circular(12),
                                     borderSide: BorderSide(
                                       color: _isCorrect == true 
-                                          ? Colors.green 
+                                          ? AppTheme.primaryGreen 
                                           : _isCorrect == false 
-                                              ? Colors.red 
-                                              : Theme.of(context).colorScheme.primary,
+                                              ? AppTheme.studyOrange 
+                                              : AppTheme.primaryBlue,
                                       width: _isCorrect != null ? 3 : 2,
                                     ),
                                   ),
                                   contentPadding: const EdgeInsets.symmetric(
                                     horizontal: 16,
-                                    vertical: 16,
+                                    vertical: 12,
                                   ),
                                 ),
                                 inputFormatters: [
-                                  FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z\s]')), // Only English letters and spaces
+                                  FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z\s]')),
                                 ],
                                 onTap: () {
                                   widget.focusNode.requestFocus();
                                 },
                                 onChanged: (value) {
-                                  // Reset check state when user types again after checking
                                   if (_isCorrect != null && value != _lastCheckedText) {
                                     setState(() {
                                       _isCorrect = null;
@@ -671,27 +708,25 @@ class _SpellContentState extends ConsumerState<SpellContent> {
                                 },
                               ),
                               
-                              // Show letter-by-letter feedback for incorrect spelling
                               if (_isCorrect == false && _lastCheckedText != null)
                                 Padding(
-                                  padding: const EdgeInsets.only(top: 12.0, left: 8.0, right: 8.0),
+                                  padding: const EdgeInsets.only(top: 8.0, left: 8.0, right: 8.0),
                                   child: _buildLetterFeedback(_lastCheckedText!, widget.word.englishWord.toLowerCase()),
                                 ),
                               
-                              // Success message when correct
                               if (_isCorrect == true)
                                 Padding(
-                                  padding: const EdgeInsets.only(top: 12.0),
+                                  padding: const EdgeInsets.only(top: 8.0),
                                   child: Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: const [
-                                      Icon(Icons.check_circle, color: Colors.green, size: 24),
-                                      SizedBox(width: 8),
+                                      Icon(Icons.check_circle, color: AppTheme.primaryGreen, size: 20),
+                                      SizedBox(width: 6),
                                       Text(
                                         'Correct!',
                                         style: TextStyle(
-                                          color: Colors.green,
-                                          fontSize: 18,
+                                          color: AppTheme.primaryGreen,
+                                          fontSize: 16,
                                           fontWeight: FontWeight.bold,
                                         ),
                                       ),
@@ -699,120 +734,110 @@ class _SpellContentState extends ConsumerState<SpellContent> {
                                   ),
                                 ),
                               
-                              SizedBox(height: _isCorrect == false ? 12 : 20),
+                              SizedBox(height: _isCorrect == false ? 8 : 12),
                               
-                              // Check button
                               if (!_isFlipped)
-                                ElevatedButton.icon(
+                                AppTheme.gradientButton(
+                                  text: 'Check',
                                   onPressed: (widget.textController.text.trim().isEmpty || _isCorrect == true) 
                                       ? null 
                                       : _checkSpelling,
-                                  icon: const Icon(Icons.check),
-                                  label: const Text('Check'),
-                                  style: ElevatedButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                                    backgroundColor: Theme.of(context).colorScheme.primary,
-                                    foregroundColor: Colors.white,
-                                  ),
+                                  gradient: (widget.textController.text.trim().isEmpty || _isCorrect == true)
+                                      ? LinearGradient(colors: [AppTheme.softGrey, AppTheme.softGrey])
+                                      : AppTheme.blueGradient,
+                                  icon: Icons.check,
                                 ),
                               
-                              // "I know this word" checkbox
                               if (!_isFlipped)
                                 Padding(
-                                  padding: const EdgeInsets.only(top: 12.0),
+                                  padding: const EdgeInsets.only(top: 8.0),
                                   child: Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       Checkbox(
                                         value: widget.isKnown,
                                         onChanged: (_) => widget.onMarkKnown(),
-                                        checkColor: Colors.white,
-                                        fillColor: widget.isKnown 
-                                            ? WidgetStateProperty.all(Colors.green)
-                                            : WidgetStateProperty.all(null),
                                       ),
                                       Text(
                                         'I know this word',
                                         style: widget.isKnown
-                                            ? const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)
-                                            : null,
+                                            ? const TextStyle(color: AppTheme.primaryGreen, fontWeight: FontWeight.bold)
+                                            : const TextStyle(color: AppTheme.darkGrey),
                                       ),
                                       if (widget.isKnown)
                                         const Padding(
                                           padding: EdgeInsets.only(left: 8.0),
-                                          child: Icon(Icons.check_circle, color: Colors.green, size: 20),
+                                          child: Icon(Icons.check_circle, color: AppTheme.primaryGreen, size: 20),
                                         ),
                                     ],
                                   ),
                                 ),
                             ],
-                            const SizedBox(height: 12),
-                            
-                            // Down button (Prev) - stays at bottom
-                            Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 16.0),
-                              child: IconButton(
-                                icon: const Icon(Icons.expand_more_rounded, color: Colors.grey),
-                                onPressed: widget.onPrev,
-                                tooltip: 'Previous word',
-                              ),
-                            ),
-                            const Text(
-                              'Swipe Up/Down for Next/Prev',
-                              style: TextStyle(color: Colors.grey, fontSize: 12),
-                            ),
-                            const Text(
-                              'Swipe Left/Right to Flip',
-                              style: TextStyle(color: Colors.grey, fontSize: 12),
-                            ),
+                            const SizedBox(height: 24),
                           ],
                         ),
                       ),
-                      // Up button at top
+                    ),
                       Positioned(
                         top: 8,
                         left: 0,
                         right: 0,
                         child: Center(
                           child: IconButton(
-                            icon: const Icon(Icons.expand_less_rounded, color: Colors.grey),
-                            onPressed: widget.onNext,
-                            tooltip: 'Next word',
+                            icon: const Icon(Icons.expand_less_rounded, color: AppTheme.softGrey),
+                            onPressed: widget.onPrev,
+                            tooltip: 'Previous word',
                           ),
                         ),
                       ),
-                      // Left button - vertically centered, on the left
+                      Positioned(
+                        bottom: 8,
+                        left: 0,
+                        right: 0,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Text(
+                              'Swipe Up/Down for Next/Prev',
+                              style: TextStyle(color: AppTheme.softGrey, fontSize: 12),
+                            ),
+                            const Text(
+                              'Swipe Left/Right to Flip',
+                              style: TextStyle(color: AppTheme.softGrey, fontSize: 12),
+                            ),
+                            const SizedBox(height: 4),
+                            IconButton(
+                              icon: const Icon(Icons.expand_more_rounded, color: AppTheme.softGrey),
+                              onPressed: widget.onNext,
+                              tooltip: 'Next word',
+                            ),
+                          ],
+                        ),
+                      ),
                       Positioned(
                         left: 8,
-                        top: 0,
-                        bottom: 0,
-                        child: Center(
-                          child: IconButton(
-                            icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.grey),
-                            onPressed: () {
-                              setState(() {
-                                _isFlipped = !_isFlipped;
-                              });
-                            },
-                            tooltip: 'Flip card',
-                          ),
+                        bottom: 120,
+                        child: IconButton(
+                          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppTheme.softGrey),
+                          onPressed: () {
+                            setState(() {
+                              _isFlipped = !_isFlipped;
+                            });
+                          },
+                          tooltip: 'Flip card',
                         ),
                       ),
-                      // Right button - vertically centered, on the right
                       Positioned(
                         right: 8,
-                        top: 0,
-                        bottom: 0,
-                        child: Center(
-                          child: IconButton(
-                            icon: const Icon(Icons.arrow_forward_ios_rounded, color: Colors.grey),
-                            onPressed: () {
-                              setState(() {
-                                _isFlipped = !_isFlipped;
-                              });
-                            },
-                            tooltip: 'Flip card',
-                          ),
+                        bottom: 120,
+                        child: IconButton(
+                          icon: const Icon(Icons.arrow_forward_ios_rounded, color: AppTheme.softGrey),
+                          onPressed: () {
+                            setState(() {
+                              _isFlipped = !_isFlipped;
+                            });
+                          },
+                          tooltip: 'Flip card',
                         ),
                       ),
                     ],
@@ -826,4 +851,3 @@ class _SpellContentState extends ConsumerState<SpellContent> {
     );
   }
 }
-

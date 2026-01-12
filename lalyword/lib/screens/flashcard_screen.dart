@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:audioplayers/audioplayers.dart';
 import '../providers/app_providers.dart';
 import '../models/word_item.dart';
+import '../config/app_theme.dart';
 
 class FlashcardScreen extends ConsumerStatefulWidget {
   const FlashcardScreen({super.key});
@@ -21,7 +22,6 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen> {
   }
 
   Future<void> _initSession() async {
-    // Load words from selected list
     try {
       final words = await ref.read(wordsListProvider.future);
       if (words.isNotEmpty) {
@@ -45,15 +45,28 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen> {
     final currentWord = notifier.currentWord;
 
     if (_isLoading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+      return Scaffold(
+        backgroundColor: AppTheme.lightGrey,
+        body: Center(
+          child: CircularProgressIndicator(color: AppTheme.primaryBlue),
+        ),
       );
     }
 
     if (session.isEmpty || currentWord == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Empty List')),
-        body: const Center(child: Text('No words in this list.')),
+        backgroundColor: AppTheme.lightGrey,
+        appBar: AppBar(
+          title: const Text('Empty List'),
+          backgroundColor: AppTheme.pureWhite,
+          foregroundColor: AppTheme.darkGrey,
+        ),
+        body: Center(
+          child: Text(
+            'No words in this list.',
+            style: TextStyle(color: AppTheme.darkGrey),
+          ),
+        ),
       );
     }
 
@@ -63,11 +76,13 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen> {
         : 'Word ${notifier.currentVisiblePosition} / ${notifier.visibleCount}';
     
     return Scaffold(
+      backgroundColor: AppTheme.lightGrey,
       appBar: AppBar(
+        backgroundColor: AppTheme.pureWhite,
+        foregroundColor: AppTheme.darkGrey,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () async {
-            // Skip warning if no words are marked as known
             final hasKnown = notifier.hasKnownWords;
             if (!hasKnown) {
               if (mounted) {
@@ -79,6 +94,10 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen> {
             final confirmed = await showDialog<bool>(
               context: context,
               builder: (context) => AlertDialog(
+                backgroundColor: AppTheme.pureWhite,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
                 title: const Text('Exit?'),
                 content: const Text('Are you sure? This will reset all "I know this word" checkboxes and reshuffle the order.'),
                 actions: [
@@ -103,19 +122,21 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen> {
           IconButton(
              icon: const Icon(Icons.shuffle),
              onPressed: () async {
-               // Skip warning if no words are marked as known
                final hasKnown = notifier.hasKnownWords;
                if (!hasKnown) {
                  if (mounted) {
-                   notifier.setWords(session); // Reshuffles and clears known states
+                   notifier.setWords(session);
                  }
                  return;
                }
                
-               // Show confirmation dialog
                final confirmed = await showDialog<bool>(
                  context: context,
                  builder: (context) => AlertDialog(
+                   backgroundColor: AppTheme.pureWhite,
+                   shape: RoundedRectangleBorder(
+                     borderRadius: BorderRadius.circular(16),
+                   ),
                    title: const Text('Reshuffle words?'),
                    content: const Text('Are you sure? This will reset all "I know this word" checkboxes and reshuffle the order.'),
                    actions: [
@@ -131,7 +152,7 @@ class _FlashcardScreenState extends ConsumerState<FlashcardScreen> {
                  ),
                );
                if (confirmed == true && mounted) {
-                 notifier.setWords(session); // Reshuffles and clears known states
+                 notifier.setWords(session);
                }
              },
           )
@@ -174,18 +195,15 @@ class FlashcardContent extends ConsumerStatefulWidget {
 class _FlashcardContentState extends ConsumerState<FlashcardContent> {
   bool _isFlipped = false;
   bool _enriching = false;
-  // Local toggle state. Initialized from global settings.
   late bool _showSyllablesLocal;
   final AudioPlayer _audioPlayer = AudioPlayer();
-  bool _syllablesTrackedForCurrentWord = false; // Track if we've already counted syllables for this word
+  bool _syllablesTrackedForCurrentWord = false;
 
   @override
   void initState() {
     super.initState();
-    // Initialize local state from global settings
     _showSyllablesLocal = ref.read(settingsProvider).showSyllables;
     _checkEnrichment();
-    // Track that word was shown
     _trackWordShown();
   }
 
@@ -196,12 +214,10 @@ class _FlashcardContentState extends ConsumerState<FlashcardContent> {
       setState(() {
         _isFlipped = false;
         _enriching = false;
-        // Reset local state when word changes
         _showSyllablesLocal = ref.read(settingsProvider).showSyllables;
         _syllablesTrackedForCurrentWord = false;
       });
       _checkEnrichment();
-      // Track that new word was shown
       _trackWordShown();
     }
   }
@@ -215,9 +231,6 @@ class _FlashcardContentState extends ConsumerState<FlashcardContent> {
   Future<void> _checkEnrichment() async {
     if (_enriching) return;
     
-    // Check if we need to enrich (missing audio/syllables or missing translation AND Hebrew)
-    // Treat empty strings the same as null (missing data)
-    
     bool needsDictionary = widget.word.audioUrl == null || 
                           widget.word.audioUrl!.isEmpty ||
                           widget.word.syllables == null || 
@@ -230,29 +243,19 @@ class _FlashcardContentState extends ConsumerState<FlashcardContent> {
     setState(() => _enriching = true);
 
     WordItem updated = widget.word;
-    print('=== ENRICHMENT START for: ${widget.word.englishWord} ===');
-    print('Initial syllables: "${updated.syllables}"');
-    print('Initial hebrewWord: "${updated.hebrewWord}"');
 
-    // 1. Dictionary
     if (needsDictionary) {
       final dictService = ref.read(dictionaryServiceProvider);
-      print('Calling enrichWord');
       updated = await dictService.enrichWord(updated);
-      print('After enrichWord - syllables: "${updated.syllables}", audioUrl: ${updated.audioUrl}');
     }
 
-    // 2. Translation
     if (updated.hebrewWord == null || updated.hebrewWord!.isEmpty) {
       final transService = ref.read(translationServiceProvider);
       final rawDetails = await transService.translate(updated.englishWord);
       if (rawDetails != null) {
         updated = updated.copyWith(hebrewWord: rawDetails);
-        print('After translation - hebrewWord: "${updated.hebrewWord}"');
       }
     }
-
-    print('=== ENRICHMENT END - Final syllables: "${updated.syllables}" ===');
 
     if (mounted) {
        widget.onEnrich(updated);
@@ -264,54 +267,51 @@ class _FlashcardContentState extends ConsumerState<FlashcardContent> {
     if (widget.word.audioUrl != null) {
       try {
         await _audioPlayer.play(UrlSource(widget.word.audioUrl!));
-        // Track that sound was heard
         _trackSoundHeard();
         
-        // Toggle syllables on when audio is played (if syllables are available)
-        // Note: Auto-toggle does NOT count as syllables shown - only manual eye button presses count
         final hasSyllables = widget.word.syllables != null && 
                             widget.word.syllables!.isNotEmpty;
         if (hasSyllables && !_showSyllablesLocal) {
           setState(() {
             _showSyllablesLocal = true;
-            // Do NOT track syllables shown here - only manual eye button presses should count
           });
         }
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
-           SnackBar(content: Text('Error playing audio: $e')),
+           SnackBar(
+             content: Text('Error playing audio: $e'),
+             backgroundColor: AppTheme.studyOrange,
+           ),
         );
       }
     } else {
        ScaffoldMessenger.of(context).showSnackBar(
-           const SnackBar(content: Text('No audio available')),
+           SnackBar(
+             content: const Text('No audio available'),
+             backgroundColor: AppTheme.softGrey,
+           ),
         );
     }
   }
 
   void _handleVerticalDrag(DragEndDetails details) {
     if (details.primaryVelocity! < 0) {
-      // Swipe Up -> Next
       widget.onNext();
     } else if (details.primaryVelocity! > 0) {
-      // Swipe Down -> Prev
       widget.onPrev();
     }
   }
 
   void _handleHorizontalDrag(DragEndDetails details) {
-    // Swipe Side -> Flip
     final wasFlipped = _isFlipped;
     setState(() {
       _isFlipped = !_isFlipped;
     });
-    // Track Hebrew shown when flipping to Hebrew side
     if (!wasFlipped && _isFlipped) {
       _trackHebrewShown();
     }
   }
   
-  // Track activity methods
   Future<void> _trackWordShown() async {
     final updated = widget.word.copyWith(timesShown: widget.word.timesShown + 1);
     await _updateWordActivity(updated);
@@ -335,7 +335,6 @@ class _FlashcardContentState extends ConsumerState<FlashcardContent> {
   Future<void> _updateWordActivity(WordItem updatedWord) async {
     final storageService = ref.read(storageServiceProvider);
     await storageService.updateWordActivity(updatedWord);
-    // Also update in session
     widget.onEnrich(updatedWord);
   }
 
@@ -345,30 +344,54 @@ class _FlashcardContentState extends ConsumerState<FlashcardContent> {
       onVerticalDragEnd: _handleVerticalDrag,
       onHorizontalDragEnd: _handleHorizontalDrag,
       child: Container(
-        color: Theme.of(context).colorScheme.surface, // Background
-        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              AppTheme.lightGrey,
+              AppTheme.pureWhite,
+            ],
+          ),
+        ),
         padding: const EdgeInsets.all(24),
-        child: AspectRatio(
-          aspectRatio: 0.7, // Card shape
-          child: Card(
-            elevation: 8,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-            child: Stack(
-              children: [
-                // Main content
-                Padding(
-                  padding: const EdgeInsets.all(32.0),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final cardHeight = constraints.maxHeight * 0.75;
+            final cardWidth = constraints.maxWidth;
+            return Center(
+              child: SizedBox(
+                height: cardHeight,
+                width: cardWidth,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: AppTheme.pureWhite,
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 20,
+                        offset: const Offset(0, 10),
+                      ),
+                    ],
+                  ),
+                  child: Stack(
                     children: [
-                      // Up button space at top
-                      const SizedBox(height: 48),
+                      SingleChildScrollView(
+                        padding: const EdgeInsets.only(bottom: 16.0),
+                        child: Padding(
+                          padding: const EdgeInsets.all(32.0),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const SizedBox(height: 48),
                       if (_isFlipped) ...[
-                          // HEBREW SIDE
                           Text(
                             widget.word.hebrewWord ?? 'Translating...',
                             style: Theme.of(context).textTheme.displayMedium?.copyWith(
                               fontWeight: FontWeight.bold,
+                              color: AppTheme.darkGrey,
                             ),
                             textAlign: TextAlign.center,
                             textDirection: TextDirection.rtl,
@@ -376,22 +399,13 @@ class _FlashcardContentState extends ConsumerState<FlashcardContent> {
                           const SizedBox(height: 20),
                           Text(
                             '(Swipe to flip back)',
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey),
+                            style: TextStyle(color: AppTheme.softGrey),
                           ),
                       ] else ...[
-                          // ENGLISH SIDE
-                          // If Syllables enabled AND available, show syllables as MAIN text or sub text?
-                          // User said: "when enabled, all the English words show a dot between silables"
-                          // This implies the main "English Word" display should be the syllabified version.
-                          
                           Builder(builder: (context) {
-                             // Use local state
-                             // Check both null AND empty string
                              final hasSyllables = widget.word.syllables != null && 
-                                                widget.word.syllables!.isNotEmpty;
+                                                 widget.word.syllables!.isNotEmpty;
                              
-                             // Format word: if it starts with "to ", show as "(to) word"
-                             // If it ends with " to", show as "word {to}"
                              String formattedWord = widget.word.englishWord;
                              if (formattedWord.toLowerCase().startsWith('to ') && formattedWord.length > 3) {
                                formattedWord = '(to) ${formattedWord.substring(3)}';
@@ -403,12 +417,10 @@ class _FlashcardContentState extends ConsumerState<FlashcardContent> {
                                  ? widget.word.syllables! 
                                  : formattedWord;
 
-                             // Single syllable check: if we are showing syllables, and there are no dots inside, add one at end.
                              if (_showSyllablesLocal && hasSyllables && !displayText.contains('.')) {
                                displayText = '$displayText.';
                              }
                              
-                             // Track syllables shown when displaying syllables (only once per word display)
                              if (_showSyllablesLocal && hasSyllables && !_syllablesTrackedForCurrentWord) {
                                WidgetsBinding.instance.addPostFrameCallback((_) {
                                  _trackSyllablesShown();
@@ -421,8 +433,6 @@ class _FlashcardContentState extends ConsumerState<FlashcardContent> {
                                  Row(
                                    mainAxisAlignment: MainAxisAlignment.center,
                                    children: [
-                                      // Invisible spacer to balance the icon if we want it strictly centered
-                                      // Or just place icon to the right/top-right
                                       Flexible(
                                         child: FittedBox(
                                           fit: BoxFit.scaleDown,
@@ -430,6 +440,7 @@ class _FlashcardContentState extends ConsumerState<FlashcardContent> {
                                             displayText,
                                             style: Theme.of(context).textTheme.displayMedium?.copyWith(
                                               fontWeight: FontWeight.bold,
+                                              color: AppTheme.darkGrey,
                                             ),
                                             textAlign: TextAlign.center,
                                             maxLines: 1,
@@ -441,13 +452,12 @@ class _FlashcardContentState extends ConsumerState<FlashcardContent> {
                                           icon: Icon(
                                             _showSyllablesLocal ? Icons.visibility_off : Icons.visibility,
                                             size: 20,
-                                            color: Colors.grey,
+                                            color: AppTheme.softGrey,
                                           ),
                                           onPressed: () {
                                             setState(() {
                                               final wasShowing = _showSyllablesLocal;
                                               _showSyllablesLocal = !_showSyllablesLocal;
-                                              // Track when syllables are toggled on
                                               if (!wasShowing && _showSyllablesLocal && hasSyllables) {
                                                 _trackSyllablesShown();
                                                 _syllablesTrackedForCurrentWord = true;
@@ -467,39 +477,74 @@ class _FlashcardContentState extends ConsumerState<FlashcardContent> {
                           if (_enriching)
                             const SizedBox(
                               width: 20, height: 20, 
-                              child: CircularProgressIndicator(strokeWidth: 2)
+                              child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primaryBlue)
                             ),
                           
                           const SizedBox(height: 48),
                           
-                          // Audio Button
-                          IconButton.filled(
-                            icon: const Icon(Icons.volume_up, size: 32),
-                            onPressed: (widget.word.audioUrl != null && widget.word.audioUrl!.isNotEmpty)
-                                ? _playSound
-                                : null,
-                            style: IconButton.styleFrom(padding: const EdgeInsets.all(16)),
+                          Container(
+                            decoration: BoxDecoration(
+                              gradient: AppTheme.blueGradient,
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppTheme.primaryBlue.withOpacity(0.3),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                onTap: (widget.word.audioUrl != null && widget.word.audioUrl!.isNotEmpty)
+                                    ? _playSound
+                                    : null,
+                                customBorder: const CircleBorder(),
+                                child: Container(
+                                  padding: const EdgeInsets.all(16),
+                                  child: const Icon(Icons.volume_up, size: 32, color: AppTheme.pureWhite),
+                                ),
+                              ),
+                            ),
                           ),
                           
                           Padding(
                             padding: const EdgeInsets.only(top: 16.0),
                             child: Column(
+                              mainAxisSize: MainAxisSize.min,
                               children: [
                                 if (widget.word.phonetic != null)
-                                  Text(
-                                    widget.word.phonetic!,
-                                    style: const TextStyle(color: Colors.grey, fontStyle: FontStyle.italic),
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                                    child: Text(
+                                      widget.word.phonetic!,
+                                      style: TextStyle(color: AppTheme.softGrey, fontStyle: FontStyle.italic),
+                                      textAlign: TextAlign.center,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
                                   ),
                                 if (widget.word.originalWord != null)
                                   Padding(
-                                    padding: EdgeInsets.only(top: widget.word.phonetic != null ? 8.0 : 0.0),
-                                    child: Text(
-                                      widget.word.originalWord!.toLowerCase().startsWith('to ')
-                                          ? '(to) ${widget.word.originalWord!.substring(3)}'
-                                          : widget.word.originalWord!.toLowerCase().endsWith(' to') && widget.word.originalWord!.length > 4
-                                              ? '${widget.word.originalWord!.substring(0, widget.word.originalWord!.length - 3)} {to}'
-                                              : widget.word.originalWord!,
-                                      style: const TextStyle(color: Color(0xFFFFA366)), // Soft orange
+                                    padding: EdgeInsets.only(
+                                      top: widget.word.phonetic != null ? 8.0 : 0.0,
+                                      left: 8.0,
+                                      right: 8.0,
+                                    ),
+                                    child: FittedBox(
+                                      fit: BoxFit.scaleDown,
+                                      child: Text(
+                                        widget.word.originalWord!.toLowerCase().startsWith('to ')
+                                            ? '(to) ${widget.word.originalWord!.substring(3)}'
+                                            : widget.word.originalWord!.toLowerCase().endsWith(' to') && widget.word.originalWord!.length > 4
+                                                ? '${widget.word.originalWord!.substring(0, widget.word.originalWord!.length - 3)} {to}'
+                                                : widget.word.originalWord!,
+                                        style: TextStyle(color: AppTheme.studyOrange),
+                                        textAlign: TextAlign.center,
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
                                     ),
                                   ),
                               ],
@@ -507,113 +552,119 @@ class _FlashcardContentState extends ConsumerState<FlashcardContent> {
                           ),
                       ],
                       
-                      const Spacer(),
+                      const SizedBox(height: 20),
                       
-                      // "I know this word" checkbox
                       if (widget.onToggleKnown != null)
                         Padding(
-                          padding: const EdgeInsets.only(bottom: 16.0),
+                          padding: const EdgeInsets.only(bottom: 12.0),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Checkbox(
                                 value: widget.isKnown,
                                 onChanged: (_) => widget.onToggleKnown!(),
-                                checkColor: Colors.white,
-                                fillColor: widget.isKnown 
-                                    ? WidgetStateProperty.all(Colors.green)
-                                    : WidgetStateProperty.all(null),
                               ),
-                              Text(
-                                'I know this word',
-                                style: widget.isKnown
-                                    ? const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)
-                                    : null,
+                              Flexible(
+                                child: Text(
+                                  'I know this word',
+                                  style: widget.isKnown
+                                      ? const TextStyle(color: AppTheme.primaryGreen, fontWeight: FontWeight.bold)
+                                      : const TextStyle(color: AppTheme.darkGrey),
+                                  textAlign: TextAlign.center,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               ),
                               if (widget.isKnown)
                                 const Padding(
                                   padding: EdgeInsets.only(left: 8.0),
-                                  child: Icon(Icons.check_circle, color: Colors.green, size: 20),
+                                  child: Icon(Icons.check_circle, color: AppTheme.primaryGreen, size: 20),
                                 ),
                             ],
                           ),
                         ),
                       
-                      // Down button (Prev) - stays at bottom
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 16.0),
-                        child: IconButton(
-                          icon: const Icon(Icons.expand_more_rounded, color: Colors.grey),
-                          onPressed: widget.onPrev,
-                          tooltip: 'Previous word',
+                      const SizedBox(height: 48),
+                            ],
+                          ),
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      const Text('Swipe Up/Down for Next/Prev', style: TextStyle(color: Colors.grey)),
-                      const Text('Swipe Left/Right to Flip', style: TextStyle(color: Colors.grey)),
+                      Positioned(
+                        top: 8,
+                        left: 0,
+                        right: 0,
+                        child: Center(
+                          child: IconButton(
+                            icon: const Icon(Icons.expand_less_rounded, color: AppTheme.softGrey),
+                            onPressed: widget.onPrev,
+                            tooltip: 'Previous word',
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        bottom: 8,
+                        left: 0,
+                        right: 0,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text('Swipe Up/Down for Next/Prev', style: TextStyle(color: AppTheme.softGrey, fontSize: 12)),
+                            Text('Swipe Left/Right to Flip', style: TextStyle(color: AppTheme.softGrey, fontSize: 12)),
+                            const SizedBox(height: 4),
+                            IconButton(
+                              icon: const Icon(Icons.expand_more_rounded, color: AppTheme.softGrey),
+                              onPressed: widget.onNext,
+                              tooltip: 'Next word',
+                            ),
+                          ],
+                        ),
+                      ),
+                      Positioned(
+                        left: 8,
+                        top: 0,
+                        bottom: 0,
+                        child: Center(
+                          child: IconButton(
+                            icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppTheme.softGrey),
+                            onPressed: () {
+                              setState(() {
+                                final wasFlipped = _isFlipped;
+                                _isFlipped = !_isFlipped;
+                                if (!wasFlipped && _isFlipped) {
+                                  _trackHebrewShown();
+                                }
+                              });
+                            },
+                            tooltip: 'Flip card',
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        right: 8,
+                        top: 0,
+                        bottom: 0,
+                        child: Center(
+                          child: IconButton(
+                            icon: const Icon(Icons.arrow_forward_ios_rounded, color: AppTheme.softGrey),
+                            onPressed: () {
+                              setState(() {
+                                final wasFlipped = _isFlipped;
+                                _isFlipped = !_isFlipped;
+                                if (!wasFlipped && _isFlipped) {
+                                  _trackHebrewShown();
+                                }
+                              });
+                            },
+                            tooltip: 'Flip card',
+                          ),
+                        ),
+                      ),
                     ],
-                  ),
-                ),
-                // Up button at top
-                Positioned(
-                  top: 8,
-                  left: 0,
-                  right: 0,
-                  child: Center(
-                    child: IconButton(
-                      icon: const Icon(Icons.expand_less_rounded, color: Colors.grey),
-                      onPressed: widget.onNext,
-                      tooltip: 'Next word',
-                    ),
-                  ),
-                ),
-                // Left button - vertically centered, on the left
-                Positioned(
-                  left: 8,
-                  top: 0,
-                  bottom: 0,
-                  child: Center(
-                    child: IconButton(
-                      icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.grey),
-                      onPressed: () {
-                        setState(() {
-                          final wasFlipped = _isFlipped;
-                          _isFlipped = !_isFlipped;
-                          // Track Hebrew shown when flipping to Hebrew side
-                          if (!wasFlipped && _isFlipped) {
-                            _trackHebrewShown();
-                          }
-                        });
-                      },
-                      tooltip: 'Flip card',
-                    ),
-                  ),
-                ),
-                // Right button - vertically centered, on the right
-                Positioned(
-                  right: 8,
-                  top: 0,
-                  bottom: 0,
-                  child: Center(
-                    child: IconButton(
-                      icon: const Icon(Icons.arrow_forward_ios_rounded, color: Colors.grey),
-                      onPressed: () {
-                        setState(() {
-                          final wasFlipped = _isFlipped;
-                          _isFlipped = !_isFlipped;
-                          // Track Hebrew shown when flipping to Hebrew side
-                          if (!wasFlipped && _isFlipped) {
-                            _trackHebrewShown();
-                          }
-                        });
-                      },
-                      tooltip: 'Flip card',
-                    ),
-                  ),
-                ),
-              ],
             ),
           ),
+        ),
+      );
+          },
         ),
       ),
     );
